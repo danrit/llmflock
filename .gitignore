@@ -14,6 +14,10 @@
 /data/example2-img-transform/*
 !/data/example2-img-transform/documents
 !/data/example2-img-transform/*.*
+!/data/example3-finance/
+/data/example3-finance/*
+!/data/example3-finance/documents
+!/data/example3-finance/*.*
 
 # Python
 # Byte-compiled / optimized / DLL files

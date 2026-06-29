@@ -1,0 +1,32 @@
+{"id": "1", "Company": ["Albertsons", "Rite Aid"], "Date": null, "Location": null, "Money": null, "Person": null, "Product": null, "Quantity": null}
+{"id": "2", "Company": ["Essilor", "Luxottica"], "Date": null, "Location": ["EU"], "Money": null, "Person": null, "Product": null, "Quantity": null}
+{"id": "3", "Company": ["Broadcom", "NXP Semconductors.", "Qualcomms"], "Date": ["February 21"], "Location": ["US"], "Money": ["$117 billion"], "Person": ["Donald Trump"], "Product": null, "Quantity": null}
+{"id": "4", "Company": ["Bank of America", "Merrill Lynch"], "Date": null, "Location": null, "Money": ["$50 Billion"], "Person": null, "Product": null, "Quantity": null}
+{"id": "5", "Company": ["Broadcom", "NXP", "Qualcomm", "Reuters"], "Date": null, "Location": null, "Money": ["$117 billion"], "Person": null, "Product": null, "Quantity": null}
+{"id": "6", "Company": ["Mci"], "Date": null, "Location": ["British"], "Money": ["$22 Billion"], "Person": null, "Product": null, "Quantity": null}
+{"id": "7", "Company": ["Boston Scientific", "Guidant", "Johnson & Johnson"], "Date": null, "Location": null, "Money": ["$21.5 billion", "$24.6 billion", "$36", "$36 a share", "$72 per share"], "Person": null, "Product": null, "Quantity": null}
+{"id": "8", "Company": ["21st Century Fox", "Time Warner"], "Date": null, "Location": null, "Money": ["$80B"], "Person": null, "Product": null, "Quantity": null}
+{"id": "9", "Company": null, "Date": null, "Location": ["Japan"], "Money": null, "Person": null, "Product": null, "Quantity": null}
+{"id": "10", "Company": ["COLUMBIA GROUP;"], "Date": ["SEPT. 8"], "Location": null, "Money": null, "Person": null, "Product": null, "Quantity": ["Four"]}
+{"id": "11", "Company": ["BB&T", "SunTrust", "U.S. Bank"], "Date": null, "Location": null, "Money": null, "Person": null, "Product": null, "Quantity": null}
+{"id": "12", "Company": ["Norsk Hydro", "Statoil"], "Date": null, "Location": null, "Money": null, "Person": null, "Product": null, "Quantity": null}
+{"id": "13", "Company": ["American Home Products", "Pfizer"], "Date": null, "Location": null, "Money": ["$65 billion", "excess of $90 billion"], "Person": null, "Product": null, "Quantity": null}
+{"id": "14", "Company": ["Raytheon", "United Technologies"], "Date": ["early 2020"], "Location": null, "Money": null, "Person": null, "Product": null, "Quantity": null}
+{"id": "15", "Company": ["BMS", "Celgene"], "Date": null, "Location": null, "Money": ["$74 Billion"], "Person": ["Giovanni Caforio"], "Product": null, "Quantity": null}
+{"id": "16", "Company": ["CVS", "Caremark"], "Date": null, "Location": null, "Money": ["$21 Billion"], "Person": null, "Product": null, "Quantity": null}
+{"id": "17", "Company": ["Actavis plc", "Allergan", "Allergan plc", "Valeant"], "Date": null, "Location": ["Canadian"], "Money": null, "Person": null, "Product": null, "Quantity": null}
+{"id": "18", "Company": ["ChemChina", "Syngenta"], "Date": null, "Location": null, "Money": ["$43 Billion"], "Person": null, "Product": null, "Quantity": null}
+{"id": "19", "Company": ["London Stock Exchange", "Refinitiv"], "Date": null, "Location": null, "Money": ["$27 billion"], "Person": null, "Product": null, "Quantity": null}
+{"id": "20", "Company": ["Chrysler", "Daimler Benz"], "Date": ["May 7 , 1998"], "Location": null, "Money": null, "Person": null, "Product": null, "Quantity": null}
+{"id": "21", "Company": null, "Date": null, "Location": ["Chinese"], "Money": null, "Person": null, "Product": null, "Quantity": null}
+{"id": "22", "Company": ["Hutchison", "VimpelCom"], "Date": null, "Location": ["Italy"], "Money": ["$24 Billion"], "Person": null, "Product": null, "Quantity": null}
+{"id": "23", "Company": ["ARM", "SoftBank"], "Date": null, "Location": null, "Money": ["$31 billion"], "Person": null, "Product": null, "Quantity": null}
+{"id": "24", "Company": ["Charles Schwab", "TD Ameritrade"], "Date": null, "Location": null, "Money": ["$26 billion"], "Person": null, "Product": null, "Quantity": null}
+{"id": "25", "Company": ["HP", "Xerox"], "Date": null, "Location": null, "Money": ["$33.5 billion ( 25.8 billion )"], "Person": null, "Product": null, "Quantity": null}
+{"id": "26", "Company": ["China Mobile"], "Date": null, "Location": ["Chinese"], "Money": null, "Person": null, "Product": null, "Quantity": ["seven"]}
+{"id": "27", "Company": ["GSK", "Unilever"], "Date": null, "Location": null, "Money": ["$68 billion"], "Person": null, "Product": null, "Quantity": null}
+{"id": "28", "Company": ["Boston Scientific", "Guidant"], "Date": null, "Location": null, "Money": null, "Person": null, "Product": null, "Quantity": null}
+{"id": "29", "Company": ["Global Crossing", "Qwest", "US West"], "Date": null, "Location": null, "Money": null, "Person": null, "Product": null, "Quantity": null}
+{"id": "30", "Company": ["Baker Hughes", "Halliburton"], "Date": null, "Location": ["U.S.", "European"], "Money": ["$28 billion"], "Person": null, "Product": ["Oilfield services"], "Quantity": null}
+{"id": "31", "Company": ["AIG", "American General"], "Date": ["May 11 , 2001"], "Location": null, "Money": null, "Person": null, "Product": null, "Quantity": null}
+{"id": "32", "Company": ["Endeavor", "UFC", "WWE"], "Date": null, "Location": null, "Money": ["$21 bln"], "Person": null, "Product": null, "Quantity": null}
