@@ -103,4 +103,4 @@ Note: Contains light styling for table readability.
 
 ## Prompt
 
-The prompt is in `data/example1-ev/LLM-PROMPT-EV.md` and contains instructions to extract the 5 attributes from the content of the wiki article.
+The prompt is in `data/example1-ev/PROMPT.default.md` and contains instructions to extract the 5 attributes from the content of the wiki article.

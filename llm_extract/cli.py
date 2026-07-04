@@ -7,9 +7,10 @@ import os
 from datetime import datetime
 from jsonschema import validate, ValidationError
 
-import llm
+# from dotenv import load_dotenv
+# WIP: about adding another provider (openrouter)
+
 import logging
-import ollama
 import yaml
 from llm_extract.ollama_ollama import ollama_ollama_call
 from llm_extract.simonw_llm import simonw_llm_call
@@ -37,7 +38,7 @@ def logger_debug_file(content, filename, directory=None):
     """Write debug text to a file in the specified directory."""
     if args.debug:
         if directory is None:
-            directory = config_module.run_dir
+            directory = config_module.log_dir
         with open(os.path.join(directory, filename), 'w') as f:
             f.write(content)
         logger.debug(f"File saved: {os.path.join(directory, filename)}")
@@ -118,6 +119,7 @@ def call_llm(prompt: str, model_config: dict, model_options: dict) -> dict:
 
 
 def run_variations(data: dict, variations: dict, config: dict):
+    data_id = data['id']
     # print('data:', json.dumps(data, indent=2))
     # print('data_schema:', json.dumps(data_schema, indent=2))
     # print('variations:', json.dumps(variations, indent=2))
@@ -151,11 +153,7 @@ def run_variations(data: dict, variations: dict, config: dict):
             variables = {**data, **document}
             prompt = build_prompt(prompt_template, variables)
 
-            # TODO: replace hard-coded data-specific variable (fmn_snake, cn_snake)
-            #  with a generic approach
-            fmn_snake = data['full_model_name'].lower().replace(' ', '_')
-            cn_snake = data['configuration_name'].lower().replace(' ', '_')
-            logger_debug_file(prompt, f'prompt-{fmn_snake}-{cn_snake}-{document_set_name}-{prompt_name}.md')
+            logger_debug_file(prompt, f'prompt-{data_id}-{document_set_name}-{prompt_name}.md')
 
             # iterate over the models
             for model_name in variations['models']:
@@ -176,7 +174,7 @@ def run_variations(data: dict, variations: dict, config: dict):
 
                         # iterate over the number of repeats
                         for repeat in range(1, variations['repeats'] + 1):
-                            print(f'Repeat {repeat} of {variations["repeats"]} for {fmn_snake} - {cn_snake} doc={document_set_name}, prompt={prompt_name}, model={model_name}, temp={temp}, top_p={top_p} ')
+                            print(f'Repeat {repeat} for id={data_id} doc={document_set_name}, prompt={prompt_name}, model={model_name}, temp={temp}, top_p={top_p} ')
 
                             if args.dry_run:
                                 continue
@@ -190,18 +188,11 @@ def run_variations(data: dict, variations: dict, config: dict):
                             response['meta']['repeat'] = repeat
 
                             logger_debug_file(json.dumps(response, indent=2),
-                                              f'response-{fmn_snake}-{cn_snake}={document_set_name}-{prompt_name}-{model_name}-temp{temp}-topp{top_p}-repeat{repeat}.json')
+                                              f'response-{data_id}-{document_set_name}-{prompt_name}-{model_name}-temp{temp}-topp{top_p}-repeat{repeat}.json')
 
                             # extract and validate JSON from response
                             extracted_data = extract_validate_json(response['data']['text'], config_module.data_schema)
                             logger.debug('Extracted data: ' + json.dumps(extracted_data))
-        #                   NEW HEREHEREHER: i have now split data into data+document and done the replacement
-        #                   HEREHEREHER: seems that it is working so far, now:
-        #                   - DONE save debug respoinse in file
-        #                   - DONE extract json response and validate it against schema
-        #                   - IN PROGRESS extract meta information (tokens, time, repeats params etc
-        #                   - aggregate results in a CSV or JSON file
-        #                   - make it work with other backends (simonw/llm)
 
 
     return
@@ -213,15 +204,28 @@ def cli():
     with open(args.configfile, 'r') as file:
         config = yaml.safe_load(file)
 
-    log_dir = os.path.join(os.path.dirname(args.configfile), 'log')
-    config_module.run_dir = os.path.join(log_dir, datetime.now().strftime('%Y%m%d-%H%M%S'))
+    logs_dir = os.path.join(os.path.dirname(args.configfile), 'logs')
+    runs_dir = os.path.join(os.path.dirname(args.configfile), 'runs')
+    run_timestamp = datetime.now().strftime('%Y%m%d-%H%M%S')
+    config_module.log_dir = os.path.join(logs_dir, run_timestamp)
+    config_module.run_dir = os.path.join(runs_dir, run_timestamp)
 
+    os.makedirs(config_module.log_dir, exist_ok=True)
     os.makedirs(config_module.run_dir, exist_ok=True)
-    logging.basicConfig(filename=os.path.join(config_module.run_dir, 'llm_extract.log'), encoding='utf-8',
-                        level=logging.DEBUG if args.debug else logging.INFO,
+
+    # Configure logger for all (this package + dependencies).
+    logging.basicConfig(filename=os.path.join(config_module.log_dir, 'llm_extract.log'), encoding='utf-8',
+                        level=logging.INFO,
                         format='%(asctime)s - %(levelname)s - %(message)s',
                         datefmt='%Y-%m-%d %H:%M:%S')
+    # Override this package's logger for level
+    if args.debug:
+        logging.getLogger('llm_extract').setLevel(logging.DEBUG)
+
     logger.info('Run started')
+
+    # load_dotenv()
+    # api_key = os.getenv('API_KEY')
 
     if args.scenario not in config['scenarios']:
         print(f"Scenario '{args.scenario}' not found in config.yaml")
@@ -238,38 +242,38 @@ def cli():
     # print('variations:', json.dumps(scenario['variations'], indent=2))
     # print('data_schema:', json.dumps(config_module.data_schema, indent=2))
 
-    combinations = []
-    combinations_count = 1
+    variations = []
+    variations_count = 1
 
     factor = len(scenario['variations']['document_sets'])
-    combinations_count *= factor
-    combinations.append(f'{factor} document set')
+    variations_count *= factor
+    variations.append(f'{factor} document set')
 
     factor = len(scenario['variations']['prompts'])
-    combinations_count *= factor
-    combinations.append(f'{factor} prompt')
+    variations_count *= factor
+    variations.append(f'{factor} prompt')
 
     factor = len(scenario['variations']['models'])
-    combinations_count *= factor
-    combinations.append(f'{factor} model')
+    variations_count *= factor
+    variations.append(f'{factor} model')
 
     for parameter, values in scenario['variations']['model_options'].items():
         # print(f"Parameter: {parameter}, Values: {values}")
         # print(f'Total variations: {len(values)}')
-        combinations_count *= len(values)
-        combinations.append(f'{len(values)} {parameter}')
+        variations_count *= len(values)
+        variations.append(f'{len(values)} {parameter}')
 
     factor = scenario['variations']['repeats']
-    combinations_count *= factor
-    combinations.append(f'{factor} repeat')
+    variations_count *= factor
+    variations.append(f'{factor} repeat')
 
-    print(f'Total Variations: {combinations_count} ({" x ".join(combinations)})')
+    print(f'Total Variations: {variations_count} ({" x ".join(variations)})')
+    
+    dataset_length = 0
+    with open(dataset['filename'], 'r') as infile:
+        dataset_length = sum(1 for line in infile if line.strip())
 
-    if args.dry_run:
-        # Print number of lines in the dataset file
-        with open(dataset['filename'], 'r') as infile:
-            line_count = sum(1 for line in infile if line.strip())
-        print(f'Total input items: {line_count} (in {dataset["filename"]})')
+    print(f'Total dataset items: {dataset_length} (in {dataset["filename"]})')
 
 
     # Iterate over the dataset and run the variations for each item:
@@ -280,5 +284,15 @@ def cli():
             # print(line.strip())
             data = json.loads(line.strip())
             run_variations(data, scenario['variations'], config)
+
+    meta_file_content = {}
+    meta_file_content['run_timestamp'] = run_timestamp
+    meta_file_content['config'] = config
+    meta_file_content['stats'] = {
+        'dataset_length': dataset_length,
+        'variations_count': variations_count,
+    }
+    with open(os.path.join(config_module.run_dir, 'meta.json'), 'w') as f:
+        f.write(json.dumps(meta_file_content, indent=2))
 
     logger.info('Run completed')

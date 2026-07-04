@@ -101,16 +101,16 @@ scenarios:
       prompts:
         - default
       models:
-        - deepseek-r1
-#        - gemma3
+#        - deepseek-r1
+        - gemma3
 #        - gpt-oss
       model_options:
         temperature:
-#          - 0.1
-          - 0.5
+          - 0.1
+#          - 0.5
 #          - 1.0
         top_p:
 #          - 0.1
 #          - 0.5
           - 0.95
-      repeats: 2
+      repeats: 1

@@ -8,6 +8,7 @@ dependencies = [
     "llm-gpt4all",
     "llm-ollama",
     "ollama",
+    "python-dotenv",
     "PyYAML"
 ]
 
