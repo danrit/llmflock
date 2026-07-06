@@ -51,16 +51,15 @@ def build_prompt(template: str, variables: dict) -> str:
     :param variables:
     :return:
     """
-    # if one of the data field is "filename",
-    # load the file content into a new field 'doc_content':
-    # if "language" -> "doc_language"
+    # if a variable name is suffixed by "_filename", load the file content
+    # into a new variable named without that suffix (eg "doc_content_filename"
+    # -> "doc_content")
     variables_loaded = {}
     for k, v in variables.items():
-        if k == 'filename':
+        if k.endswith('_filename'):
+            var_name = k[:-len('_filename')]
             with open(v, 'r') as file:
-                variables_loaded['doc_content'] = file.read()
-        elif k == 'language':
-            variables_loaded['doc_language'] = v
+                variables_loaded[var_name] = file.read()
         else:
             variables_loaded[k] = v
 
