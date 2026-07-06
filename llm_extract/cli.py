@@ -124,23 +124,25 @@ def run_variations(data: dict, variations: dict, config: dict):
     # print('data_schema:', json.dumps(data_schema, indent=2))
     # print('variations:', json.dumps(variations, indent=2))
 
-    # iterate over the document sets
-    for document_set_name in variations['document_sets']:
-        document_set_config = config['document_sets'][document_set_name]
-        docs_by_id = {}
-        # For later: for each run of run_variations (ie for each data item)
-        # we are doing this load file operation for the same file. I note that
-        # it can be optimized but I think there may be not significant gain in
-        # the overall performance of the process. So keeping it simple for now.
-        with open(document_set_config['filename'], 'r') as infile:
-            for line in infile:
-                if not line.strip():
-                    continue
-                item = json.loads(line.strip())
-                docs_by_id[item['id']] = item
-        document = docs_by_id[data['id']]
-
-
+    # iterate over the document sets (optional: skip if not defined)
+    document_set_names = variations.get('document_sets', [None])
+    for document_set_name in document_set_names:
+        if document_set_name is None:
+            document = {}
+        else:
+            document_set_config = config['document_sets'][document_set_name]
+            docs_by_id = {}
+            # For later: for each run of run_variations (ie for each data item)
+            # we are doing this load file operation for the same file. I note that
+            # it can be optimized but I think there may be not significant gain in
+            # the overall performance of the process. So keeping it simple for now.
+            with open(document_set_config['filename'], 'r') as infile:
+                for line in infile:
+                    if not line.strip():
+                        continue
+                    item = json.loads(line.strip())
+                    docs_by_id[item['id']] = item
+            document = docs_by_id[data['id']]
 
         # iterate over the prompts
         for prompt_name in variations['prompts']:
@@ -150,49 +152,63 @@ def run_variations(data: dict, variations: dict, config: dict):
             with open(prompt_config['template']['filename'], 'r') as file:
                 prompt_template = file.read()
 
-            variables = {**data, **document}
-            prompt = build_prompt(prompt_template, variables)
+            # iterate over the prompt const embeds (optional: skip if not defined)
+            prompt_const_embed_names = variations.get('prompt_const_embeds', [None])
+            for prompt_const_embed_name in prompt_const_embed_names:
+                if prompt_const_embed_name is None:
+                    const_embed_variables = {}
+                else:
+                    prompt_const_embed_config = config['prompt_const_embeds'][prompt_const_embed_name]
+                    # convert to the "<var_name>_filename" convention expected by build_prompt
+                    const_embed_variables = {
+                        f'{var_name}_filename': var_config['filename']
+                        for var_name, var_config in prompt_const_embed_config.items()
+                    }
 
-            logger_debug_file(prompt, f'prompt-{data_id}-{document_set_name}-{prompt_name}.md')
+                variables = {**data, **document, **const_embed_variables}
+                prompt = build_prompt(prompt_template, variables)
 
-            # iterate over the models
-            for model_name in variations['models']:
-                model_config = config['models'][model_name]
-                if 'name' not in model_config:
-                    model_config['name'] = model_name
+                logger_debug_file(prompt, f'prompt-{data_id}-{document_set_name}-{prompt_name}-{prompt_const_embed_name}.md')
 
-                # iterate over the model options temperature and top_p
-                for temp in variations['model_options']['temperature']:
-                    for top_p in variations['model_options']['top_p']:
-                        model_options = {
-                            'temperature': temp,
-                            'top_p': top_p,
-                            # Hard-coded max tokens (never part of the variations)
-                            # TODO: move somewhere else?
-                            'max_predict_tokens': 8192,
-                        }
+                # iterate over the models
+                for model_name in variations['models']:
+                    model_config = config['models'][model_name]
+                    if 'name' not in model_config:
+                        model_config['name'] = model_name
 
-                        # iterate over the number of repeats
-                        for repeat in range(1, variations['repeats'] + 1):
-                            print(f'Repeat {repeat} for id={data_id} doc={document_set_name}, prompt={prompt_name}, model={model_name}, temp={temp}, top_p={top_p} ')
+                    # iterate over the model options temperature and top_p
+                    for temp in variations['model_options']['temperature']:
+                        for top_p in variations['model_options']['top_p']:
+                            model_options = {
+                                'temperature': temp,
+                                'top_p': top_p,
+                                # Hard-coded max tokens (never part of the variations)
+                                # TODO: move somewhere else?
+                                'max_predict_tokens': 8192,
+                            }
 
-                            if args.dry_run:
-                                continue
+                            # iterate over the number of repeats
+                            for repeat in range(1, variations['repeats'] + 1):
+                                print(f'Repeat {repeat} for id={data_id} doc={document_set_name}, prompt={prompt_name}, const_embed={prompt_const_embed_name}, model={model_name}, temp={temp}, top_p={top_p} ')
 
-                            response = call_llm(prompt, model_config, model_options)
+                                if args.dry_run:
+                                    continue
 
-                            # append more meta information to response
-                            response['meta'].update(model_options)
-                            response['meta']['prompt'] = prompt_name
-                            response['meta']['model'] = model_name # may override existing key
-                            response['meta']['repeat'] = repeat
+                                response = call_llm(prompt, model_config, model_options)
 
-                            logger_debug_file(json.dumps(response, indent=2),
-                                              f'response-{data_id}-{document_set_name}-{prompt_name}-{model_name}-temp{temp}-topp{top_p}-repeat{repeat}.json')
+                                # append more meta information to response
+                                response['meta'].update(model_options)
+                                response['meta']['prompt'] = prompt_name
+                                response['meta']['prompt_const_embed'] = prompt_const_embed_name
+                                response['meta']['model'] = model_name # may override existing key
+                                response['meta']['repeat'] = repeat
 
-                            # extract and validate JSON from response
-                            extracted_data = extract_validate_json(response['data']['text'], config_module.data_schema)
-                            logger.debug('Extracted data: ' + json.dumps(extracted_data))
+                                logger_debug_file(json.dumps(response, indent=2),
+                                                  f'response-{data_id}-{document_set_name}-{prompt_name}-{prompt_const_embed_name}-{model_name}-temp{temp}-topp{top_p}-repeat{repeat}.json')
+
+                                # extract and validate JSON from response
+                                extracted_data = extract_validate_json(response['data']['text'], config_module.data_schema)
+                                logger.debug('Extracted data: ' + json.dumps(extracted_data))
 
 
     return
@@ -245,13 +261,19 @@ def cli():
     variations = []
     variations_count = 1
 
-    factor = len(scenario['variations']['document_sets'])
+    # document_sets is optional
+    factor = len(scenario['variations'].get('document_sets', [None]))
     variations_count *= factor
     variations.append(f'{factor} document set')
 
     factor = len(scenario['variations']['prompts'])
     variations_count *= factor
     variations.append(f'{factor} prompt')
+
+    # prompt_const_embeds is optional
+    factor = len(scenario['variations'].get('prompt_const_embeds', [None]))
+    variations_count *= factor
+    variations.append(f'{factor} prompt const embed')
 
     factor = len(scenario['variations']['models'])
     variations_count *= factor
