@@ -51,8 +51,9 @@ def build_prompt(template: str, variables: dict) -> str:
     :param variables:
     :return:
     """
-    # if on of the data field follow the naming <var>_filename,
-    # load the file content into a new field <var>:
+    # if one of the data field is "filename",
+    # load the file content into a new field 'doc_content':
+    # if "language" -> "doc_language"
     variables_loaded = {}
     for k, v in variables.items():
         if k == 'filename':
