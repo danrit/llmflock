@@ -41,6 +41,7 @@ I have used an agent to
 
 The initial prompts, the agent sessions (containing the conversation) and the produced scripts are available in `documents/process/` folder for reference.
 
+Note: I have made the results "clean-up" markdown files the default in the config file to run the llm-extract: `prompt_const_embeds.default`. For the sake of the experiment I have provided as well the unprocessed markdown file provided by each service on their website: [cloudinary.bycloudinary.md](./documents/cloudinary.bycloudinary.md) and [cloudflare.bycloudflare.md](./documents/cloudflare.bycloudflare.md) and I have made them as a secondary variation in the config file: `prompt_const_embeds.unprocessed`
 
 
 ### Choice of transformations
