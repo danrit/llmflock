@@ -1,5 +1,3 @@
-# Transformation URL API reference
-
 The Transformation URL API enables you to deliver media assets, including a large variety of on-the-fly transformations through the use of URL parameters. This reference provides comprehensive coverage of all available URL transformation parameters, including syntax, value details, and examples.
 
 > See also:

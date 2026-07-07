@@ -2,8 +2,6 @@
 > This page is part of the Image and Video APIs product. Fetch the complete documentation index for Image and Video APIs at: https://cloudinary.com/documentation/llms-image-and-video-apis.txt?referrer=docpage and then use it to discover all relevant pages before exploring further.
 > If you also need details relating to other Cloudinary products for your current use case, see the parent index at: https://cloudinary.com/documentation/llms.txt?referrer=docpage
 
-# Transformation URL API reference
-
 
 The Transformation URL API enables you to deliver media assets, including a large variety of on-the-fly transformations through the use of URL parameters. This reference provides comprehensive coverage of all available URL transformation parameters, including syntax, value details, and examples.
 

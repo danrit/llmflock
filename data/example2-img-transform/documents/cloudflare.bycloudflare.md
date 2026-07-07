@@ -10,8 +10,6 @@ image: https://developers.cloudflare.com/dev-products-preview.png
 
 [Skip to content](#%5Ftop) 
 
-# Features
-
 Cloudflare enables developers to optimize images at scale by dynamically generating different versions in real time.
 
 The guide describes all of the parameters that can be used to resize, crop, manipulate, and apply visual effects to images.
