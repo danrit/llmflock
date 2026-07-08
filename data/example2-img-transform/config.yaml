@@ -1,0 +1,89 @@
+#
+datasets:
+  default:
+    filename: data/example2-img-transform/dataset.jsonl
+  default_lite:
+    filename: data/example2-img-transform/dataset.lite.jsonl
+
+data_schemas:
+  default:
+    # Definition of the expected structured data format (JSON Schema)
+    type: object
+    properties:
+      cloudflare_url_component:
+        type:
+          - string
+          - "null"
+    required:
+      - cloudflare_url_component
+
+document_sets:
+  html:
+    filename: data/example2-img-transform/documents/doc.html.jsonl
+  wikitext:
+    filename: data/example2-img-transform/documents/doc.wikitext.jsonl
+
+prompts:
+  default:
+    template:
+      filename: data/example2-img-transform/PROMPT.default.md
+      variables: # unused...
+        - const_embed_text_doc_cloudinary
+        - const_embed_text_doc_cloudflare
+        - cloudinary_url_component
+
+prompt_const_embeds:
+  default:
+    const_embed_text_doc_cloudinary:
+      filename: data/example2-img-transform/documents/cloudinary.md
+    const_embed_text_doc_cloudflare:
+      filename: data/example2-img-transform/documents/cloudflare.md
+  unprocessed:
+    const_embed_text_doc_cloudinary:
+      filename: data/example2-img-transform/documents/cloudinary.bycloudinary.md
+    const_embed_text_doc_cloudflare:
+      filename: data/example2-img-transform/documents/cloudflare.bycloudflare.md
+
+models:
+  deepseek-r1:
+    backend: ollama_ollama
+    name: deepseek-r1:8b-llama-distill-q4_K_M
+    options:
+      temperature: temperature
+      max_predict_tokens: num_predict
+      top_p: top_p
+  gemma3:
+    backend: ollama_ollama
+    options:
+      temperature: temperature
+      max_predict_tokens: num_predict
+      top_p: top_p
+  gpt-oss:
+    backend: ollama_ollama
+    name: gpt-oss
+    options:
+      temperature: temperature
+      max_predict_tokens: num_predict
+      top_p: top_p
+
+scenarios:
+  default:
+    name: Migration of url-based image transformations from Service A to Service B (Cloudinary to Cloudflare)
+    dataset: default_lite
+    data_schema: default
+    variations:
+      prompts:
+        - default
+      prompt_const_embeds:
+        - default
+#        - unprocessed
+      models:
+        - deepseek-r1
+#        - gemma3
+#        - gpt-oss
+      model_options:
+        temperature:
+          - 0.1
+        top_p:
+          - 0.95
+      repeats: 1
