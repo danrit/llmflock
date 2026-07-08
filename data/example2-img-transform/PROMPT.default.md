@@ -6,14 +6,7 @@ Cloudinary is a SaaS company providing cloud media management services, specific
 
 Cloudflare is a company providing content delivery network services, specifically it includes an image transformation service. The service allows to transform images using a url-based API. The reference documentation of the service is given below.
 
-The syntax of the transformation url is different between the two services.
-
-{doc_1_markdown}
-{doc_2_markdown}
-
-TODO: here add a bit a more general templating system to pass a undefined number of embedded text documents: 2 ways to pass them:
-- markdown documents; just plonk the markdown content in the prompt (like above)
-- other text format: embedded them with a markdown code block with the language set to the format of the document (like for ev example)
+The syntax of the transformation url is different between the two services. It is provided further down in the sections "Cloudinary Syntax" and "Cloudflare Syntax".
 
 ## Instruction
 
@@ -50,6 +43,10 @@ For example 1 the full delivery urls are:
 
 If a transformation component in Cloudinary does not have an equivalent in Cloudflare, return "null" for the output.
 
+**Expected output syntax**
+
+Format the data in the response as a JSON Markdown fenced code block: 1 Object with 1 attribute `cloudflare_url_component`.
+
 Example output:
 
 ```json
@@ -57,3 +54,11 @@ Example output:
   "cloudflare_url_component": "fit=crop,gravity=0.0x0.0,h=320,w=320"
 }}
 ```
+
+## Cloudinary Syntax
+
+{const_embed_text_doc_cloudinary}
+
+## Cloudflare Syntax
+
+{const_embed_text_doc_cloudflare}

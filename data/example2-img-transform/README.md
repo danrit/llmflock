@@ -43,6 +43,7 @@ The initial prompts, the agent sessions (containing the conversation) and the pr
 
 Note: I have made the results "clean-up" markdown files the default in the config file to run the llm-extract: `prompt_const_embeds.default`. For the sake of the experiment I have provided as well the unprocessed markdown file provided by each service on their website: [cloudinary.bycloudinary.md](./documents/cloudinary.bycloudinary.md) and [cloudflare.bycloudflare.md](./documents/cloudflare.bycloudflare.md) and I have made them as a secondary variation in the config file: `prompt_const_embeds.unprocessed`
 
+Note2: The initial headings in the documentation are, as expected, conflicting with the headings of the prompt when embedded. I think it will confuse the LLM. I have used another agent session to produce the script [downgrade_headings.py](./documents/process/downgrade_headings.py) and I ran it on the documentation to downgrade the headings so, when embedded into the prompt it fit nicely into the architecture.
 
 ### Choice of transformations
 

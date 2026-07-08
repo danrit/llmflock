@@ -14,7 +14,7 @@ The Transformation URL API enables you to deliver media assets, including a larg
 > * [Transformation basics video tutorial](transformation_basics_tutorial)
 
 
-## Parameter Index
+### Parameter Index
 
 Use this index to find specific transformation parameters. Each parameter page includes syntax details, supported values, and code examples.
 

@@ -2,14 +2,14 @@ Cloudflare enables developers to optimize images at scale by dynamically generat
 
 The guide describes all of the parameters that can be used to resize, crop, manipulate, and apply visual effects to images.
 
-## How to apply optimization
+### How to apply optimization
 
 Use Cloudflare's image optimization capabilities through:
 
 - **URL interface** — Apply parameters directly in the image URL to specify how images should be optimized when served to the browser.
 - **Workers** — Bind the Images API directly to your Worker or set the `cf.image` options on a `fetch` subrequest to build programmatic image workflows.
 
-### URL interface
+#### URL interface
 
 Cloudflare uses a different URL structure depending on whether you are optimizing a [remote](/images/optimization/transformations/overview/) or a [hosted](/images/optimization/hosted-images/serve-uploaded-images/) image:
 
@@ -48,7 +48,7 @@ https://imagedelivery.net/<ACCOUNT_HASH>/<IMAGE-ID>/<VARIANT-OR-OPTIONS>
 | `<VARIANT-OR-OPTIONS>` | Here, you can specify a [predefined variant](/images/optimization/hosted-images/create-variants/) or a list of optimization parameters, separated by a comma. A valid URL must specify either a variant or at least one parameter. |
 
 
-### Workers
+#### Workers
 
 When using [Images with Workers](/images/optimization/transformations/transform-via-workers/), you can:
 
@@ -58,9 +58,9 @@ When using [Images with Workers](/images/optimization/transformations/transform-
 
 ---
 
-## Parameters
+### Parameters
 
-### `anim`
+#### `anim`
 
 Specifies whether to preserve animation frames from input files.
 
@@ -75,7 +75,7 @@ anim=false
 ```
 
 
-### `background`
+#### `background`
 
 Specifies an opaque or transparent color to fill blank or transparent pixels in the image. The default is `%23FFFFFF` (white).
 
@@ -95,7 +95,7 @@ background=rgb%28240%2C40%2C145%29
 ```
 
 
-### `blur`
+#### `blur`
 
 Applies a blur radius to the image. Accepts an integer from `0` (no blur) to `250` (maximum blur). The default is `0`.
 
@@ -107,7 +107,7 @@ blur=50
 ```
 
 
-### `border`
+#### `border`
 
 Adds a border around the image.
 
@@ -125,7 +125,7 @@ The border is applied after the image has been resized. The border width automat
 
 
 
-### `brightness`
+#### `brightness`
 
 Adjusts the image's overall luminance using a multiplier.
 
@@ -139,7 +139,7 @@ brightness=0.5
 ```
 
 
-### `compression`
+#### `compression`
 
 Selects the output format that is quickest to compress. Accepts `fast`. The default is none.
 
@@ -153,7 +153,7 @@ compression=fast
 ```
 
 
-### `contrast`
+#### `contrast`
 
 Adjusts the image's overall difference between the darkest and lightest parts using a multiplier.
 
@@ -167,7 +167,7 @@ contrast=0.5
 ```
 
 
-### `dpr`
+#### `dpr`
 
 Scales the output resolution by a multiplier to match a user's specific screen density (for example, Retina or 4K). The default is `1`, which delivers the image at the exact width and height requested. The maximum supported value is `2`.
 
@@ -181,7 +181,7 @@ dpr=1
 ```
 
 
-### `fit`
+#### `fit`
 
 Specifies how the image is fit to the target area.
 
@@ -204,7 +204,7 @@ fit=pad
 ```
 
 
-#### `scale-down`
+##### `scale-down`
 
 Resizes the image to fit within the specified dimensions while preserving its original aspect ratio, but never upscales the image. This is the default `fit` behavior.
 
@@ -214,7 +214,7 @@ When larger, it downscales the image to fit the target area while matching the o
 
 In the example below, the 1080x720 image is resized to fit within the target 500x500 area. Since `scale-down` preserves the original aspect ratio (3:2), the final dimensions of the output image are 500x333.
 
-#### `contain`
+##### `contain`
 
 Resizes the image to be as large as possible within the target `width` and `height` dimensions while preserving its original aspect ratio.
 
@@ -222,7 +222,7 @@ When the original image is larger than the target area, it downscales to fit the
 
 When smaller, it upscales instead (like `scale-up`). Works with the [`upscale`](#upscale) parameter to control the algorithm for enlarging an image. To avoid upscaling, use `scale-down`.
 
-#### `cover`
+##### `cover`
 
 Fills the entire target area, shrinking or enlarging the image if needed. The output area always matches the requested `width` and `height` dimensions exactly.
 
@@ -234,7 +234,7 @@ In the example below, the 1080×720 image is first resized to 750×500 (matching
 
 When the original image is smaller than the target area, it upscales instead. To avoid upscaling, use `crop`.
 
-#### `crop`
+##### `crop`
 
 Resizes the image to fill the target area without upscaling.
 
@@ -244,7 +244,7 @@ In the example below, the original image (1080x720) is smaller than the target a
 
 When the original image is larger than the target area, it behaves like `cover` (fills the target area and crops the rest) instead.
 
-#### `aspect-crop`
+##### `aspect-crop`
 
 Crops the image to match the target aspect ratio, scaling down if needed but never upscaling.
 
@@ -254,7 +254,7 @@ When the original image is smaller than the target area, it keeps its original s
 
 For example, a 612x613 image requested at 1920x1120 will not be upscaled. Instead, it stays at its original size and is cropped to 612x357, matching the 1920:1120 aspect ratio. Use the [`gravity`](#gravity) parameter to control which part of the image is preserved during cropping.
 
-#### `pad`
+##### `pad`
 
 Resizes the image to be as large as possible within the dimensions. If applicable, the output area will be expanded to match the `width` and `height` dimensions exactly.
 
@@ -262,13 +262,13 @@ Works with the `background` parameter to fill any blank or transparent pixels. H
 
 In the example below, the original image (1080x720) is smaller than the target area (1080x1080), so it creates space for the remaining pixels.
 
-#### `squeeze`
+##### `squeeze`
 
 Resizes the image to exactly match the requested width and height, without cropping the edges or constraining the portions.
 
 When the original and target aspect ratios differ, the image will be distorted to fit the target area.
 
-#### `scale-up`
+##### `scale-up`
 
 Resizes the image to fit within the specified dimensions while preserving its original aspect ratio, but never downscales the image. This is the inverse of `scale-down`.
 
@@ -276,7 +276,7 @@ When the original image is larger than the target area, it is returned at its or
 
 When the original image is smaller than the target area, it is enlarged to fit within the target dimensions. Use the [`upscale`](#upscale) parameter to control the algorithm used for upscaling images — set `upscale=generate` for AI-powered upscaling or `upscale=interpolate` (default) for bicubic interpolation.
 
-### `flip`
+#### `flip`
 
 Flips the image horizontally, vertically, or both.
 
@@ -295,7 +295,7 @@ flip=h
 
 <a id="format"></a>
 
-### `format` | `f`
+#### `format` | `f`
 
 Specifies the output format for the image.
 
@@ -330,7 +330,7 @@ if (/image\/avif/.test(accept)) {
 return fetch(url, { cf: { image } });
 ```
 
-### `gamma`
+#### `gamma`
 
 Adjusts the exposure of an image using a multiplier. Gamma controls the midtone brightness without affecting the darkest or lightest parts of the image.
 
@@ -345,7 +345,7 @@ gamma=0.5
 
 <a id="gravity"></a>
 
-### `gravity` | `g`
+#### `gravity` | `g`
 
 Specifies how the image should be cropped when used with `fit=cover` and `fit=crop`. By default, Cloudflare will crop toward the center point of the original image.
 
@@ -361,13 +361,13 @@ gravity=0.5x1
 ```
 
 
-#### `auto`
+##### `auto`
 
 Automatically sets the focal point by using a saliency algorithm to detect the most visually interesting pixels.
 
 This is useful when you don't know the contents of the image ahead of time, such as with user-generated content. For large image libraries such as e-commerce product galleries, this feature eliminates the need to manually set a focal point for each image.
 
-#### `face`
+##### `face`
 
 Automatically sets the focal point based on faces in the image.
 
@@ -375,13 +375,13 @@ This can be combined with the [`zoom`](/images/optimization/features#zoom) param
 
 *Photograph by [Suad Kamardeen (@suadkamardeen) on Unsplash ↗](https://unsplash.com/photos/woman-in-black-cardigan-standing-beside-pink-flowers-UO-82DJ3rcc)*
 
-#### `left`, `right`, `top`, `bottom`
+##### `left`, `right`, `top`, `bottom`
 
 Sets the side of the image that should not be cropped.
 
 In the example below, the 1080x720 image is cropped to a 1080x400 area, starting from its bottom edge:
 
-#### `XxY`
+##### `XxY`
 
 Sets the focal point (X,Y) so that the relative coordinates of the output image are positioned at the relative coordinates of the original image. Accepts a coordinate pair formatted as `XxY`, where X and Y are decimal values between `0.0` and `1.0`.
 
@@ -399,7 +399,7 @@ When optimizing through Workers, use an object `{x, y}` to specify coordinates. 
 
 <a id="height"></a>
 
-### `height` | `h`
+#### `height` | `h`
 
 Sets the height of the output image in pixels using a positive integer value. By default, Cloudflare uses the original height of the input image.
 
@@ -412,7 +412,7 @@ h=250
 ```
 
 
-### `metadata`
+#### `metadata`
 
 Controls the amount of invisible metadata (EXIF) that should be preserved for a JPEG image. For all other output formats (e.g. WebP or PNG), all metadata will always be discarded.
 
@@ -434,7 +434,7 @@ metadata=none
 ```
 
 
-### `onerror`
+#### `onerror`
 
 Redirects the end-user to the URL of the original source image when a fatal error prevents the image from being transformed. Accepts `redirect`. The default is none.
 
@@ -453,7 +453,7 @@ onerror=redirect
 
 <a id="quality"></a>
 
-### `quality` | `q`
+#### `quality` | `q`
 
 Specifies the output quality of an image for JPEG, WebP, and AVIF formats, expressed as a fixed value or perceptual quality level. The default is `85`.
 
@@ -470,7 +470,7 @@ q=50
 ```
 
 
-### `rotate`
+#### `rotate`
 
 Rotates an image by a number of degrees. Accepts `90`, `180`, or `270`. The default is `0` (no rotation).
 
@@ -482,7 +482,7 @@ rotate=90
 ```
 
 
-### `saturation`
+#### `saturation`
 
 Adjusts the color saturation of an image using a multiplier.
 
@@ -497,7 +497,7 @@ saturation=0.5
 ```
 
 
-### `segment`
+#### `segment`
 
 Automatically isolates the subject of an image by replacing the background with transparent pixels. Accepts `foreground`. The default is none.
 
@@ -509,7 +509,7 @@ segment=foreground
 ```
 
 
-### `sharpen`
+#### `sharpen`
 
 Applies a sharpening filter to enhance edge definition in an image. Accepts a decimal value from `0` (no sharpening) to `10` (maximum sharpening). The default is `0`. The recommended value for downscaled images is `1`.
 
@@ -520,7 +520,7 @@ sharpen=2
 
 <a id="slow-connection-quality"></a>
 
-### `slow-connection-quality` | `scq`
+#### `slow-connection-quality` | `scq`
 
 Overrides the `quality` value whenever a slow connection is detected. Accepts the same fixed or perceptual settings as [quality](#quality). The default is none.
 
@@ -548,7 +548,7 @@ scq=50
 ```
 
 
-### `trim`
+#### `trim`
 
 Removes pixels around the sides of an image.
 
@@ -556,7 +556,7 @@ This feature can be used to trim an image by its border colors or by a specified
 
 Trim takes into account the [`dpr`](#dpr) parameter and is performed before resizing and rotation.
 
-#### `border`
+##### `border`
 
 Automatically trims the sides of the image based on its border color.
 
@@ -566,7 +566,7 @@ The `trim=border` option can be further adjusted using the following parameters:
 - `trim.border.tolerance` — Sets how closely the detected pixels must match in color. Accepts an integer between `0` (doesn't need to match) and 255 (must match exactly).
 - `trim.border.keep` — Specifies the number of pixels of the original border to leave untrimmed.
 
-#### `top;right;bottom;left`
+##### `top;right;bottom;left`
 
 Specifies the number of pixels to remove from the sides of an image. Accepts four values, separated by a semicolon, to set the trim on all four sides of an image at once.
 
@@ -596,7 +596,7 @@ trim.top=0.25
 ```
 
 
-### `upscale`
+#### `upscale`
 
 Controls the algorithm used when an image needs to be enlarged. This parameter works with any [`fit`](#fit) mode that upscales, such as [`contain`](#contain), [`cover`](#cover), and [`scale-up`](#scale-up). It has no effect when `fit=scale-down` or when the target dimensions are smaller than the source.
 
@@ -618,7 +618,7 @@ upscale=generate
 
 <a id="width"></a>
 
-### `width` | `w`
+#### `width` | `w`
 
 Sets the width of the output image in pixels using a positive integer value. By default, Cloudflare uses the original width of the input image.
 
@@ -636,7 +636,7 @@ w=250
 ```
 
 
-#### `width=auto` sub-parameters
+##### `width=auto` sub-parameters
 
 When `width=auto` is specified, Cloudflare resizes the image using information from client hints (sent by the browser) or by user-agent detection as a fallback.
 
@@ -660,7 +660,7 @@ wbreakpoints=320;768;960;1200;1920 // Adds another breakpoint at 1920 pixels
 
 <a id="zoom"></a>
 
-### `zoom` | `face-zoom`
+#### `zoom` | `face-zoom`
 
 Specifies how closely the image is cropped toward detected faces when combined with the `gravity=face` option. Accepts a valid range between `0.0` (includes as much of the background as possible) and `1.0` (crops the image as closely to the face as possible). The default is `0`.
 
@@ -670,7 +670,7 @@ zoom=0.1
 ```
 
 
-## Recommended image sizes
+### Recommended image sizes
 
 Ideally, image sizes should match the exact size that they are displayed on the page. If the page contains thumbnails with markup such as `<img width="200" …>`, then images should be resized to `width=200`.
 
@@ -684,7 +684,7 @@ For example, `fit=scale-down,width=1920` sets a maximum size of 1920px and ensur
 
 You can detect device type by enabling the `CF-Device-Type` header [via Cache Rule](/cache/how-to/cache-rules/examples/cache-device-type/).
 
-## Caching
+### Caching
 
 When you optimize with Images, the original image will be fetched from the origin server and cached — following the usual rules of HTTP caching, `Cache-Control` header, etc.. Requests for multiple different image sizes are likely to reuse the cached original image without causing extra transfers from the origin server.
 
