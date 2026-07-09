@@ -248,12 +248,12 @@ def cli():
         exit(1)
 
     scenario = config['scenarios'][args.scenario]
-    dataset = config['datasets'][scenario['dataset']]
+    dataset_filename = config['datasets'][scenario['dataset']]['filename']
     # config_module.dataset = config['datasets'][scenario['dataset']]
     # config_module.document_sets = config['document_sets']
     config_module.data_schema = config['data_schemas'][scenario['data_schema']]
 
-    print(dataset)
+    print(f'Dataset filename: {dataset_filename}')
 
     # print('variations:', json.dumps(scenario['variations'], indent=2))
     # print('data_schema:', json.dumps(config_module.data_schema, indent=2))
@@ -292,14 +292,14 @@ def cli():
     print(f'Total Variations: {variations_count} ({" x ".join(variations)})')
     
     dataset_length = 0
-    with open(dataset['filename'], 'r') as infile:
+    with open(dataset_filename, 'r') as infile:
         dataset_length = sum(1 for line in infile if line.strip())
 
-    print(f'Total dataset items: {dataset_length} (in {dataset["filename"]})')
+    print(f'Total dataset items: {dataset_length} (in {dataset_filename})')
 
 
     # Iterate over the dataset and run the variations for each item:
-    with open(dataset['filename'], 'r') as infile:
+    with open(dataset_filename, 'r') as infile:
         for line in infile:
             if not line.strip():
                 continue
