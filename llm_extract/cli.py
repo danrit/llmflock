@@ -30,6 +30,8 @@ parser.add_argument('--dataset-filename', default=None,
                     help="Override the dataset file specified in config.yaml")
 parser.add_argument('--prompt-filename', default=None,
                     help="Override the prompt template file specified in config.yaml")
+parser.add_argument('--model', default=None,
+                    help="Override the models specified in config.yaml (Comma-separated list of model names)")
 args = parser.parse_args()
 
 # Ollama-powered models all accept the Ollama modelfile parameters as options
@@ -178,8 +180,10 @@ def run_variations(data: dict, variations: dict, config: dict):
 
                 logger_debug_file(prompt, f'prompt-{data_id}-{document_set_name}-{prompt_name}-{prompt_const_embed_name}.md')
 
-                # iterate over the models
-                for model_name in variations['models']:
+                # iterate over the models (an override list replaces the whole
+                # set of variations['models'])
+                model_names = args.model.split(',') if args.model else variations['models']
+                for model_name in model_names:
                     model_config = config['models'][model_name]
                     if 'name' not in model_config:
                         model_config['name'] = model_name
@@ -283,7 +287,7 @@ def cli():
     variations_count *= factor
     variations.append(f'{factor} prompt const embed')
 
-    factor = len(scenario['variations']['models'])
+    factor = len(args.model.split(',')) if args.model else len(scenario['variations']['models'])
     variations_count *= factor
     variations.append(f'{factor} model')
 
