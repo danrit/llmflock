@@ -1,0 +1,102 @@
+#
+datasets:
+  default:
+    filename: data/example3-finance/dataset.jsonl
+  default_lite:
+    filename: data/example3-finance/dataset.lite.jsonl
+
+data_schemas:
+  default:
+    # Definition of the expected structured data format (JSON Schema)
+    type: object
+    properties:
+      Company:
+        type: [array, 'null']
+        items:
+          type: string
+      Date:
+        type: [array, 'null']
+        items:
+          type: string
+      Location:
+        type: [array, 'null']
+        items:
+          type: string
+      Money:
+        type: [array, 'null']
+        items:
+          type: string
+      Person:
+        type: [array, 'null']
+        items:
+          type: string
+      Product:
+        type: [array, 'null']
+        items:
+          type: string
+      Quantity:
+        type: [array, 'null']
+        items:
+          type: string
+    required:
+      - id
+      - Company
+      - Date
+      - Location
+      - Money
+      - Person
+      - Product
+      - Quantity
+    additionalProperties: false
+
+prompts:
+  default:
+    template:
+      filename: data/example3-finance/PROMPT.default.md
+      variables: # unused...
+        - content_text
+
+models:
+  deepseek-r1:
+    backend: ollama_ollama
+    name: deepseek-r1:8b-llama-distill-q4_K_M
+    options:
+      temperature: temperature
+      max_predict_tokens: num_predict
+      top_p: top_p
+  gemma3:
+    backend: ollama_ollama
+    options:
+      temperature: temperature
+      max_predict_tokens: num_predict
+      top_p: top_p
+  gpt-oss:
+    backend: ollama_ollama
+    name: gpt-oss
+    options:
+      temperature: temperature
+      max_predict_tokens: num_predict
+      top_p: top_p
+
+scenarios:
+  default:
+    name: Extract financial and contextual entities from business and financial text.
+    dataset: default_lite
+    data_schema: default
+    variations:
+      prompts:
+        - default
+      models:
+#        - deepseek-r1
+        - gemma3
+#        - gpt-oss
+      model_options:
+        temperature:
+          - 0.1
+#          - 0.5
+#          - 1.0
+        top_p:
+#          - 0.1
+#          - 0.5
+          - 0.95
+      repeats: 1
