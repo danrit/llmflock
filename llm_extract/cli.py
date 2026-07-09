@@ -28,6 +28,8 @@ parser.add_argument('--scenario', default='default',
                     help="Specify the scenario to run (see config.yaml)")
 parser.add_argument('--dataset-filename', default=None,
                     help="Override the dataset file specified in config.yaml")
+parser.add_argument('--prompt-filename', default=None,
+                    help="Override the prompt template file specified in config.yaml")
 args = parser.parse_args()
 
 # Ollama-powered models all accept the Ollama modelfile parameters as options
@@ -146,12 +148,16 @@ def run_variations(data: dict, variations: dict, config: dict):
                     docs_by_id[item['id']] = item
             document = docs_by_id[data['id']]
 
-        # iterate over the prompts
-        for prompt_name in variations['prompts']:
-            # load the prompt definition
-            prompt_config = config['prompts'][prompt_name]
-            # load the file whose name is in prompt_config['template']['filename']
-            with open(prompt_config['template']['filename'], 'r') as file:
+        # iterate over the prompts (a single override prompt file replaces the
+        # whole set of variations['prompts'])
+        prompt_names = [None] if args.prompt_filename else variations['prompts']
+        for prompt_name in prompt_names:
+            if args.prompt_filename:
+                prompt_template_filename = args.prompt_filename
+            else:
+                prompt_config = config['prompts'][prompt_name]
+                prompt_template_filename = prompt_config['template']['filename']
+            with open(prompt_template_filename, 'r') as file:
                 prompt_template = file.read()
 
             # iterate over the prompt const embeds (optional: skip if not defined)
@@ -268,7 +274,7 @@ def cli():
     variations_count *= factor
     variations.append(f'{factor} document set')
 
-    factor = len(scenario['variations']['prompts'])
+    factor = 1 if args.prompt_filename else len(scenario['variations']['prompts'])
     variations_count *= factor
     variations.append(f'{factor} prompt')
 
