@@ -26,6 +26,8 @@ parser.add_argument('-c', '--configfile', default='config.yaml',
                     help="Specify the configuration file to use (default: config.yaml)")
 parser.add_argument('--scenario', default='default',
                     help="Specify the scenario to run (see config.yaml)")
+parser.add_argument('--dataset-filename', default=None,
+                    help="Override the dataset file specified in config.yaml")
 args = parser.parse_args()
 
 # Ollama-powered models all accept the Ollama modelfile parameters as options
@@ -248,7 +250,7 @@ def cli():
         exit(1)
 
     scenario = config['scenarios'][args.scenario]
-    dataset_filename = config['datasets'][scenario['dataset']]['filename']
+    dataset_filename = args.dataset_filename or config['datasets'][scenario['dataset']]['filename']
     # config_module.dataset = config['datasets'][scenario['dataset']]
     # config_module.document_sets = config['document_sets']
     config_module.data_schema = config['data_schemas'][scenario['data_schema']]
