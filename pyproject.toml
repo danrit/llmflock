@@ -19,7 +19,7 @@ llmr = "llmr.cli:cli"
 # IE setuptools would misinterpret extra folder(s) (data) as a package if we
 # don't add this ("Multiple top-level packages discovered in a flat-layout")
 [tool.setuptools]
-py-modules = ["llmr"]
+packages = ["llmr"]
 
 [build-system]
 requires = ["setuptools"]
