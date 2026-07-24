@@ -1,6 +1,6 @@
-# LLM-Extract
+# LLMR - LLM Runner
 
-Extract structured data from text content using LLMs.
+Define a matrix of LLM variations (model × prompt × options), run it reproducibly over a dataset and capture structured results.
 
 DRAFT: more on the objective of this tool: it is built to run extraction the same structured data (`data_schemas.default`) in a list (`datasets.default`) of documents (`document_sets.default`) usings LLM and output tabular data. It is designed to run the extraction several times - or variations - (`scenarios.default.variations`) with different models, prompts or model options (temperature, top_p). It also designed to repeat one variation several times (reference to non-deterministic behaviour of LLMs...) (`scenarios.default.variations.repeat`).
 
@@ -53,4 +53,4 @@ HEREHEREHERE - last updated July-2026 (work started March/June-2026)
 
 ## Usage
 
-To run the example in `data/example1-ev`, use the command: `llm-extract --configfile=data/example1-ev/config.yaml` or `llm-extract --configfile=data/example1-ev/config.yaml --debug`
+To run the example in `data/example1-ev`, use the command: `llmr --configfile=data/example1-ev/config.yaml` or `llmr --configfile=data/example1-ev/config.yaml --debug`

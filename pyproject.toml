@@ -1,7 +1,7 @@
 [project]
-name = "llm-extract"
+name = "llmr"
 version = "0.0.1"
-description = "A tool to extract structured data from text using LLMs."
+description = "LLM Runner is a tool to define a matrix of LLM variations (model × prompt × options), run it reproducibly over a dataset and capture structured results."
 dependencies = [
     "jsonschema",
     "llm",
@@ -13,13 +13,13 @@ dependencies = [
 ]
 
 [project.scripts]
-llm-extract = "llm_extract.cli:cli"
+llmr = "llmr.cli:cli"
 
 # Required to build the package since we are not using src layout
 # IE setuptools would misinterpret extra folder(s) (data) as a package if we
 # don't add this ("Multiple top-level packages discovered in a flat-layout")
 [tool.setuptools]
-py-modules = ["llm_extract"]
+py-modules = ["llmr"]
 
 [build-system]
 requires = ["setuptools"]
