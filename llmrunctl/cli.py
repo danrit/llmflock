@@ -1,7 +1,7 @@
 import argparse
 import re
 
-import llmr.config as config_module
+import llmrunctl.config as config_module
 import json
 import os
 from datetime import datetime
@@ -12,8 +12,8 @@ from jsonschema import validate, ValidationError
 
 import logging
 import yaml
-from llmr.ollama_ollama import ollama_ollama_call
-from llmr.simonw_llm import simonw_llm_call
+from llmrunctl.ollama_ollama import ollama_ollama_call
+from llmrunctl.simonw_llm import simonw_llm_call
 
 logger = logging.getLogger(__name__)
 
