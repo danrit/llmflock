@@ -1,6 +1,6 @@
 # LLMR - LLM Runner
 
-Define a matrix of LLM variations (model × prompt × options), run it reproducibly over a dataset and capture structured results.
+A CLI tool to interact with local and remote LLM, define scenario variations (model × prompt × options), run it over a dataset and capture structured results for comparison or to build knowledge through meta analysis.
 
 DRAFT: more on the objective of this tool: it is built to run extraction the same structured data (`data_schemas.default`) in a list (`datasets.default`) of documents (`document_sets.default`) usings LLM and output tabular data. It is designed to run the extraction several times - or variations - (`scenarios.default.variations`) with different models, prompts or model options (temperature, top_p). It also designed to repeat one variation several times (reference to non-deterministic behaviour of LLMs...) (`scenarios.default.variations.repeat`).
 
