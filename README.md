@@ -18,32 +18,6 @@ Note 4: more thought one the viewing result part: need to have a too to aggregat
 
 **On where it sits in the ecosystem of LLM tools:** It is a LLM gateway: meaning it can call different LLM providers (local inference framework or cloud-hosted) with a rudimentary plugin system. If the project matures enough it could be beneficial the transition to a more established LLM gateway tool (like liteLLm, anyLLM).
 
-HEREHEREHERE - last updated July-2026 (work started March/June-2026)
-
-### Done
-- Save debug prompt/response files per variation
-- Extract JSON from LLM response and validate against schema
-- Split `data` + `document` in `run_variations`; use generic `data['id']` instead of domain-specific identifiers
-- Separate `logs/` (debug files, log file) and `runs/` (structured outputs) directories
-- Terminology: `variations` instead of `combinations`
-- Write `meta.json` at end of run (timestamp, full config, dataset length, variations count)
-- Two additional extraction examples (beside EV attributes): image transformation, financial NER)
-
-### In progress — meta information capture
-- `meta.json` still missing: scenario name and CLI args passed in
-- Write `extracted.jsonl` per run — one line per LLM call (see schema in `data/example1-ev/runs/YYYYMMDD-HHMISS/extracted.jsonl`): fields are `id`, `document`, `prompt`, `model`, `temp`, `topp`, `repeat`, `exit_code`, `exit_message`, `processing_time`, `prompt_tokens`, `response_tokens`, `extracted`
-- Capture token counts and processing time per call (needed for `extracted.jsonl` and stats)
-
-### Next — OpenRouter provider
-- Add `openrouter` backend module (alongside `ollama_ollama.py` and `simonw_llm.py`)
-- Load API key from `.env` via `load_dotenv()` / `os.getenv('API_KEY')` (groundwork: `python-dotenv` already in dependencies, commented import already in `cli.py`)
-- Motivation: cloud-hosted provider is a must-have; also needed to build generic response metadata (token counts) that local Ollama may not return consistently
-
-### Backlog
-- Run stats output (similar to vader-llm)
-- Aggregate results across runs into CSV/JSON
-- Result comparison: pick an "ideal" run, diff others against it, export to spreadsheet
-
 
 ## Getting started
 
