@@ -17,12 +17,6 @@ data_schemas:
     required:
       - cloudflare_url_component
 
-document_sets:
-  html:
-    filename: data/example2-img-transform/documents/doc.html.jsonl
-  wikitext:
-    filename: data/example2-img-transform/documents/doc.wikitext.jsonl
-
 prompts:
   default:
     template:
@@ -38,6 +32,11 @@ prompt_const_embeds:
       filename: data/example2-img-transform/documents/cloudinary.md
     const_embed_text_doc_cloudflare:
       filename: data/example2-img-transform/documents/cloudflare.md
+  default_lite:
+    const_embed_text_doc_cloudinary:
+      filename: data/example2-img-transform/documents/cloudinary.lite.md
+    const_embed_text_doc_cloudflare:
+      filename: data/example2-img-transform/documents/cloudflare.lite.md
   unprocessed:
     const_embed_text_doc_cloudinary:
       filename: data/example2-img-transform/documents/cloudinary.bycloudinary.md
@@ -75,11 +74,12 @@ scenarios:
       prompts:
         - default
       prompt_const_embeds:
-        - default
+#        - default
+        - default_lite
 #        - unprocessed
       models:
-        - deepseek-r1
-#        - gemma3
+#        - deepseek-r1
+        - gemma3
 #        - gpt-oss
       model_options:
         temperature:
