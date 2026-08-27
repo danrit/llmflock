@@ -5,6 +5,7 @@ import llmrunctl.config as config_module
 import json
 import os
 from datetime import datetime
+from time import perf_counter
 from jsonschema import validate, ValidationError
 
 # from dotenv import load_dotenv
@@ -18,7 +19,7 @@ from llmrunctl.simonw_llm import simonw_llm_call
 logger = logging.getLogger(__name__)
 
 parser = argparse.ArgumentParser(
-    description="Extract structured data from raw content using LLM.")
+    description="Run multiple LLM scenarios over dataset.")
 parser.add_argument('-d', '--debug', action='store_true', default=False,
                     help="keep LLM prompts, responses, execution time (+...)")
 parser.add_argument('--dry-run', action='store_true', default=False,)
@@ -78,7 +79,11 @@ def build_prompt(template: str, variables: dict) -> str:
 
 
 def extract_validate_json(text: str, schema: dict) -> dict:
-    data = {}
+    extraction = {
+        'status': 0,
+        'message': None,
+        'data': {},
+    }
     json_match = re.findall(r"```json\n(.*?)\n```", text, re.DOTALL)
     if json_match:
         logger.debug('JSON code block found in LLM response')
@@ -88,20 +93,25 @@ def extract_validate_json(text: str, schema: dict) -> dict:
         json_content = json_match[-1].strip()
 
         try:
-            data = json.loads(json_content)
-            validate(instance=data, schema=schema)
+            extraction['data'] = json.loads(json_content)
+            validate(instance=extraction['data'], schema=schema)
 
         except json.JSONDecodeError as e:
             logger.error(f'Invalid JSON from LLM: {str(e)}')
             logger.error(f'Raw JSON content: {json_content[:200]}...')
+            extraction['message'] = f'Invalid JSON from LLM: {str(e)} ; Raw JSON content: {json_content[:200]}...'
+            extraction['status'] = 2
         except ValidationError as e:
             logger.error(f'JSON does not conform to schema: {str(e)}')
             logger.error(f'Extracted JSON content: {json_content[:200]}...')
+            extraction['message'] = f'JSON does not conform to schema: {str(e)} ; Extracted JSON content: {json_content[:200]}...'
+            extraction['status'] = 3
     else:
-        logger.warning(f'Failed to extract JSON from LLM response')
+        logger.error(f'Failed to extract JSON fenced-block from LLM response')
+        extraction['message'] = 'Failed to extract JSON fenced-block from LLM response'
+        extraction['status'] = 1
 
-
-    return data
+    return extraction
 
 
 def call_llm(prompt: str, model_config: dict, model_options: dict) -> dict:
@@ -201,27 +211,40 @@ def run_variations(data: dict, variations: dict, config: dict):
 
                             # iterate over the number of repeats
                             for repeat in range(1, variations['repeats'] + 1):
-                                print(f'Repeat {repeat} for id={data_id} doc={document_set_name}, prompt={prompt_name}, const_embed={prompt_const_embed_name}, model={model_name}, temp={temp}, top_p={top_p} ')
-
+                                print(f'LLM Call for id={data_id} doc={document_set_name}, prompt={prompt_name}, const_embed={prompt_const_embed_name}, model={model_name}, temp={temp}, top_p={top_p}, repeat={repeat}')
                                 if args.dry_run:
                                     continue
 
+                                start_variation = perf_counter()
                                 response = call_llm(prompt, model_config, model_options)
 
-                                # append more meta information to response
-                                response['meta'].update(model_options)
-                                response['meta']['prompt'] = prompt_name
-                                response['meta']['prompt_const_embed'] = prompt_const_embed_name
-                                response['meta']['model'] = model_name # may override existing key
-                                response['meta']['repeat'] = repeat
-
-                                logger_debug_file(json.dumps(response, indent=2),
-                                                  f'response-{data_id}-{document_set_name}-{prompt_name}-{prompt_const_embed_name}-{model_name}-temp{temp}-topp{top_p}-repeat{repeat}.json')
+                                logger_debug_file(response['data']['text'],
+                                                  f'response-{data_id}-{document_set_name}-{prompt_name}-{prompt_const_embed_name}-{model_name}-temp{temp}-topp{top_p}-repeat{repeat}.txt')
 
                                 # extract and validate JSON from response
                                 extracted_data = extract_validate_json(response['data']['text'], config_module.data_schema)
                                 logger.debug('Extracted data: ' + json.dumps(extracted_data))
 
+                                duration_ms = (perf_counter() - start_variation) * 1000
+
+                                # output in extracted.jsonl
+                                extracted_record = {
+                                    'id': data_id,
+                                    'variation': {
+                                        'document': document_set_name,
+                                        'prompt': prompt_name,
+                                        'prompt_const_embed': prompt_const_embed_name,
+                                        'model': model_name,
+                                        'temp': temp,
+                                        'top_p': top_p,
+                                        'repeat': repeat,
+                                    },
+                                    'llm_call': response['meta'],
+                                    'extraction': extracted_data,
+                                    'duration_ms': f'{duration_ms:.0f}'
+                                }
+                                with open(os.path.join(config_module.run_dir, 'output.jsonl'), 'a') as f:
+                                    f.write(json.dumps(extracted_record) + '\n')
 
     return
 
@@ -242,13 +265,13 @@ def cli():
     os.makedirs(config_module.run_dir, exist_ok=True)
 
     # Configure logger for all (this package + dependencies).
-    logging.basicConfig(filename=os.path.join(config_module.log_dir, 'llm_extract.log'), encoding='utf-8',
+    logging.basicConfig(filename=os.path.join(config_module.log_dir, 'llmrunctl.log'), encoding='utf-8',
                         level=logging.INFO,
                         format='%(asctime)s - %(levelname)s - %(message)s',
                         datefmt='%Y-%m-%d %H:%M:%S')
     # Override this package's logger for level
     if args.debug:
-        logging.getLogger('llm_extract').setLevel(logging.DEBUG)
+        logging.getLogger('llmrunctl').setLevel(logging.DEBUG)
 
     logger.info('Run started')
 
@@ -311,6 +334,7 @@ def cli():
 
 
     # Iterate over the dataset and run the variations for each item:
+    start = perf_counter()
     with open(dataset_filename, 'r') as infile:
         for line in infile:
             if not line.strip():
@@ -319,14 +343,18 @@ def cli():
             data = json.loads(line.strip())
             run_variations(data, scenario['variations'], config)
 
+    duration_ms = (perf_counter() - start) * 1000
     meta_file_content = {}
     meta_file_content['run_timestamp'] = run_timestamp
     meta_file_content['config'] = config
     meta_file_content['stats'] = {
         'dataset_length': dataset_length,
         'variations_count': variations_count,
+        'llm_calls': dataset_length * variations_count,
+        'duration_ms': f'{duration_ms:.0f}',
     }
     with open(os.path.join(config_module.run_dir, 'meta.json'), 'w') as f:
         f.write(json.dumps(meta_file_content, indent=2))
 
-    logger.info('Run completed')
+    print(f'Run completed in {duration_ms:.0f}ms')
+    logger.info(f'Run completed in {duration_ms:.0f}ms')

@@ -14,11 +14,19 @@ HEREHEREHERE - last updated July-2026 (work started March/June-2026)
 - Terminology: `variations` instead of `combinations`
 - Write `meta.json` at end of run (timestamp, full config, dataset length, variations count)
 - Two additional extraction examples (beside EV attributes): image transformation, financial NER)
+- Write `output.jsonl` per run — one line per LLM call (see schema in `data/example1-ev/runs/YYYYMMDD-HHMISS/output.jsonl`)
+- Capture token counts and processing time per call (needed for `extracted.jsonl` and stats)
 
 ### In progress — meta information capture
 - `meta.json` still missing: scenario name and CLI args passed in
-- Write `extracted.jsonl` per run — one line per LLM call (see schema in `data/example1-ev/runs/YYYYMMDD-HHMISS/extracted.jsonl`): fields are `id`, `document`, `prompt`, `model`, `temp`, `topp`, `repeat`, `exit_code`, `exit_message`, `processing_time`, `prompt_tokens`, `response_tokens`, `extracted`
-- Capture token counts and processing time per call (needed for `extracted.jsonl` and stats)
+
+### Next - provide `llm` iso-functionality (for basic feature)
+I want to allow user of popular `llm` tool to transition easy to that tool, that mean replicating some of the features, replicating the pattern, ie working WITHOUT config file.
+`parser.add_argument("prompt", help="...", nargs="?", default=None)`
+HEREHEREHER: have the entire system working WITHOUT a config.yaml file take a bit more time...
+doing there are more parameters that need to be optional: models options, document set, prompts... even dataset. I think that to make those ones optional i need to re-architecture the browsing of all variations: go away from "for loop intricated" to 2 steps process: Building the matrix/list of variations - running it (+ it will allow parallelization later...)
+    - in config.py: I have tagged all the optional parameters.
+    - next: update the looping: split in 2 AND accept the optional params
 
 ### Next — OpenRouter provider
 - Add `openrouter` backend module (alongside `ollama_ollama.py` and `simonw_llm.py`)
@@ -31,6 +39,8 @@ HEREHEREHERE - last updated July-2026 (work started March/June-2026)
 - Aggregate results across runs into CSV/JSON
 - Result comparison: pick an "ideal" run, diff others against it, export to spreadsheet
 - add the (optional) ground_truth dataset?
+- make model_options (tekp, top_p) optional and removing it from default config
+- support for yaml anchor/alias - or in other words, simplify the current syntax of `config.yaml` where I have "mandated" to use "manual references" in the `scenario` object. ie that is a simplification.
 
 
 ### currently studied

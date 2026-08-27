@@ -10,7 +10,8 @@ def ollama_ollama_call(prompt: str, model_name: str, model_options: dict) -> dic
         options=model_options,
         stream=False
     )
-    meta = {k: v for k, v in vars(response).items() if k not in ['response', 'context']}
+    # keep all valuable response attributes except the big ones
+    meta = {k: v for k, v in vars(response).items() if k not in ['context', 'response', 'thinking']}
     response_dict = {
         'data': {
             'text': response.response,
