@@ -39,7 +39,6 @@ data_schemas:
         items:
           type: string
     required:
-      - id
       - Company
       - Date
       - Location
@@ -53,6 +52,11 @@ prompts:
   default:
     template:
       filename: data/example3-finance/PROMPT.default.md
+      variables: # unused...
+        - content_text
+  lite:
+    template:
+      filename: data/example3-finance/PROMPT.lite.md
       variables: # unused...
         - content_text
 
@@ -86,6 +90,7 @@ scenarios:
     variations:
       prompts:
         - default
+#        - lite
       models:
 #        - deepseek-r1
         - gemma3
