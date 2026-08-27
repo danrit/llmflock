@@ -1,12 +1,10 @@
-### in progress
-
-- DONE better README (explaining the config.yaml)
-- DONE create config.yaml for example2 + run it! (note that it currently my local llm fail the extraction)
-- DONE create config.yaml for example3 + run it!
-
-HEREHEREHERE - last updated July-2026 (work started March/June-2026)
+# Work In Progress
 
 ### Done
+
+- better README (explaining the config.yaml)
+- create config.yaml for example2 + run it! (note that it currently my local llm fail the extraction)
+- create config.yaml for example3 + run it!
 - Save debug prompt/response files per variation
 - Extract JSON from LLM response and validate against schema
 - Split `data` + `document` in `run_variations`; use generic `data['id']` instead of domain-specific identifiers
@@ -17,7 +15,9 @@ HEREHEREHERE - last updated July-2026 (work started March/June-2026)
 - Write `output.jsonl` per run — one line per LLM call (see schema in `data/example1-ev/runs/YYYYMMDD-HHMISS/output.jsonl`)
 - Capture token counts and processing time per call (needed for `extracted.jsonl` and stats)
 
-### In progress — meta information capture
+### in progress
+
+- support for yaml anchor/alias - or in other words, simplify the current syntax of `config.yaml` where I have "mandated" to use "manual references" in the `scenario` object. ie that is a simplification.
 - `meta.json` still missing: scenario name and CLI args passed in
 
 ### Next - provide `llm` iso-functionality (for basic feature)
@@ -37,11 +37,10 @@ doing there are more parameters that need to be optional: models options, docume
 - Run stats output (similar to vader-llm) ??
 - Add the data/context hash: a way to capture into one unique hash all what can not be separatly defined (with limited options) so there is a reliable way to compare run from different time, different machines...
 - Aggregate results across runs into CSV/JSON
-- Result comparison: pick an "ideal" run, diff others against it, export to spreadsheet
-- add the (optional) ground_truth dataset?
+- Result comparison: pick an "ideal" run: can be the run of on (big) model OR a user-defined `ground_truth.jsonl`, diff others against it. Note: there is not always a ground_truth, but that can useful for my tests while developing.
+- export `output.jsonl` to spreadsheet
 - make model_options (tekp, top_p) optional and removing it from default config
-- support for yaml anchor/alias - or in other words, simplify the current syntax of `config.yaml` where I have "mandated" to use "manual references" in the `scenario` object. ie that is a simplification.
-
+- add a sort of hash of experiment condition so future `llmrunviewer` can target only similar/relevant runs to compare.
 
 ### currently studied
 
@@ -59,30 +58,7 @@ a lot of similarities: "yeah and oh :(" at the same time.
 
 Anyway that make me thing that the best definition for this tool is not so much about "extracting", but it is about managing methodically multiple llm calls and capture structure results. Maybe a better name is "llm-batch", "llm-runs" "multiple-llm-runs" "llm-multirun", "llm-runner", "llm-matrix"... (llm-runner is a good one but py package python already taken) - maybe just `llmr` For LLM Runner (no dash, make it is easy to call on CLU often)
 
-options:
-
-Opus:
- llm-runs    │ Run LLM tasks methodically across models, prompts and options — repeat, structure and compare the results.
-llm-matrix  │ Define a matrix of LLM variations (model × prompt × options × repeat) and run it reproducibly over a dataset.
-llm-batch   │ Batch-run structured LLM tasks over many records, with repeats and multi-model variations.
-Haiku:
-llm-batch — Run LLM calls across datasets with multiple models, prompts, and parameters
-llm-scenario — Execute structured LLM scenarios with configurable variations and repetitions
-llm-runner — Execute repeatable LLM workflows with variation management and result aggregation
-llm-workbench — Structured workbench for conducting LLM experiments with standardized outputs
-Sonnet:
- llm-matrix — Run a dataset through a grid of models, prompts, and parameters; collect structured, comparable outputs.
-promptgrid — Grid-run prompts × models × parameters over a dataset and capture structured results for comparison.
-llm-repeater — Run controlled, repeatable LLM call batches (multi-model, multi-prompt, multi-repeat) over a dataset
-
-
-llmr: LLM Runner: Run a matrix of LLM variations (models, prompts and options) over a dataset and capture structured results.
-
-LLM Runner: Define a matrix of LLM variations (model × prompt × options), run it reproducibly over a dataset and capture structured results.
-
 And beside the UX for CLI of https://llm.datasette.io is good, proven (all the options defined from the outside I mean) so I want to replicate it wherever it make sense too.
-
-Good finding: I realise the the author ended-up, like I did (before me!) to write JSON-Schema in yaml.
 
 ANYWAY: i need to move on: I don't need to implement all the options of `llm` just one or 2 more and then carry on!
  
