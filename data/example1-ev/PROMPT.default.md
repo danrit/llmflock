@@ -30,6 +30,8 @@ Format the data in the response as a JSON Markdown fenced code block with the fo
  - power
  - range
 
+For each attribute do not output the unit, just the value using data type "Number".
+
 Example output:
 
 ```json
