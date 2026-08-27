@@ -1,12 +1,12 @@
 #
 datasets:
-  default:
+  default: &datasets_default
     filename: data/example2-img-transform/dataset.jsonl
-  default_lite:
+  default_lite: &datasets_default_lite
     filename: data/example2-img-transform/dataset.lite.jsonl
 
 data_schemas:
-  default:
+  default: &data_schemas_default
     # Definition of the expected structured data format (JSON Schema)
     type: object
     properties:
@@ -18,7 +18,8 @@ data_schemas:
       - cloudflare_url_component
 
 prompts:
-  default:
+  default: &prompts_default
+    name: default
     template:
       filename: data/example2-img-transform/PROMPT.default.md
       variables: # unused...
@@ -27,21 +28,27 @@ prompts:
         - cloudinary_url_component
 
 prompt_const_embeds:
-  default:
-    const_embed_text_doc_cloudinary:
-      filename: data/example2-img-transform/documents/cloudinary.md
-    const_embed_text_doc_cloudflare:
-      filename: data/example2-img-transform/documents/cloudflare.md
-  default_lite:
-    const_embed_text_doc_cloudinary:
-      filename: data/example2-img-transform/documents/cloudinary.lite.md
-    const_embed_text_doc_cloudflare:
-      filename: data/example2-img-transform/documents/cloudflare.lite.md
-  unprocessed:
-    const_embed_text_doc_cloudinary:
-      filename: data/example2-img-transform/documents/cloudinary.bycloudinary.md
-    const_embed_text_doc_cloudflare:
-      filename: data/example2-img-transform/documents/cloudflare.bycloudflare.md
+  default: &prompt_const_embeds_default
+    name: default
+    variables:
+      const_embed_text_doc_cloudinary:
+        filename: data/example2-img-transform/documents/cloudinary.md
+      const_embed_text_doc_cloudflare:
+        filename: data/example2-img-transform/documents/cloudflare.md
+  default_lite: &prompt_const_embeds_default_lite
+    name: default_lite
+    variables:
+      const_embed_text_doc_cloudinary:
+        filename: data/example2-img-transform/documents/cloudinary.lite.md
+      const_embed_text_doc_cloudflare:
+        filename: data/example2-img-transform/documents/cloudflare.lite.md
+  unprocessed: &prompt_const_embeds_unprocessed
+    name: unprocessed
+    variables:
+      const_embed_text_doc_cloudinary:
+        filename: data/example2-img-transform/documents/cloudinary.bycloudinary.md
+      const_embed_text_doc_cloudflare:
+        filename: data/example2-img-transform/documents/cloudflare.bycloudflare.md
 
 models:
   deepseek-r1:
@@ -68,15 +75,15 @@ models:
 scenarios:
   default:
     name: Migration of url-based image transformations from Service A to Service B (Cloudinary to Cloudflare)
-    dataset: default_lite
-    data_schema: default
+    dataset: *datasets_default_lite
+    data_schema: *data_schemas_default
     variations:
       prompts:
-        - default
+        - *prompts_default
       prompt_const_embeds:
-#        - default
-        - default_lite
-#        - unprocessed
+#        - *prompt_const_embeds_default
+        - *prompt_const_embeds_default_lite
+#        - *prompt_const_embeds_unprocessed
       models:
 #        - deepseek-r1
         - gemma3

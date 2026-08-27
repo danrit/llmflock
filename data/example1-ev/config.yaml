@@ -1,12 +1,12 @@
 #
 datasets:
-  default:
+  default: &datasets_default
     filename: data/example1-ev/dataset.jsonl
-  default_lite:
+  default_lite: &datasets_default_lite
     filename: data/example1-ev/dataset.lite.jsonl
 
 data_schemas:
-  default:
+  default: &data_schemas_default
     # Definition of the expected structured data format (JSON Schema)
     type: object
     properties:
@@ -42,14 +42,9 @@ data_schemas:
       - range
 #      - useless_field
 
-document_sets:
-  html:
-    filename: data/example1-ev/documents/doc.html.jsonl
-  wikitext:
-    filename: data/example1-ev/documents/doc.wikitext.jsonl
-
 prompts:
-  default:
+  default: &prompts_default
+    name: default
     template:
       filename: data/example1-ev/PROMPT.default.md
       variables: # unused...
@@ -92,14 +87,16 @@ models:
 scenarios:
   default:
     name: EV attributes extraction from lite wiki article
-    dataset: default_lite
-    data_schema: default
+    dataset: *datasets_default_lite
+    data_schema: *data_schemas_default
     variations:
       document_sets:
-#        - html
-        - wikitext
+#        - name: html
+#          filename: data/example1-ev/documents/doc.html.jsonl
+        - name: wikitext
+          filename: data/example1-ev/documents/doc.wikitext.jsonl
       prompts:
-        - default
+        - *prompts_default
       models:
 #        - deepseek-r1
         - gemma3

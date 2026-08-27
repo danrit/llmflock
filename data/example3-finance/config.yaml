@@ -1,12 +1,12 @@
 #
 datasets:
-  default:
+  default: &datasets_default
     filename: data/example3-finance/dataset.jsonl
-  default_lite:
+  default_lite: &datasets_default_lite
     filename: data/example3-finance/dataset.lite.jsonl
 
 data_schemas:
-  default:
+  default: &data_schemas_default
     # Definition of the expected structured data format (JSON Schema)
     type: object
     properties:
@@ -49,12 +49,14 @@ data_schemas:
     additionalProperties: false
 
 prompts:
-  default:
+  default: &prompts_default
+    name: default
     template:
       filename: data/example3-finance/PROMPT.default.md
       variables: # unused...
         - content_text
-  lite:
+  lite: &prompts_lite
+    name: lite
     template:
       filename: data/example3-finance/PROMPT.lite.md
       variables: # unused...
@@ -85,12 +87,12 @@ models:
 scenarios:
   default:
     name: Extract financial and contextual entities from business and financial text.
-    dataset: default_lite
-    data_schema: default
+    dataset: *datasets_default_lite
+    data_schema: *data_schemas_default
     variations:
       prompts:
-        - default
-#        - lite
+        - *prompts_default
+#        - *prompts_lite
       models:
 #        - deepseek-r1
         - gemma3

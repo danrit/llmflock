@@ -134,25 +134,26 @@ def call_llm(prompt: str, model_config: dict, model_options: dict) -> dict:
     return response
 
 
-def run_variations(data: dict, variations: dict, config: dict):
+def run_variations(data: dict, variations: dict, models: dict):
     data_id = data['id']
     # print('data:', json.dumps(data, indent=2))
     # print('data_schema:', json.dumps(data_schema, indent=2))
     # print('variations:', json.dumps(variations, indent=2))
 
     # iterate over the document sets (optional: skip if not defined)
-    document_set_names = variations.get('document_sets', [None])
-    for document_set_name in document_set_names:
-        if document_set_name is None:
+    document_sets = variations.get('document_sets', [None])
+    for document_set in document_sets:
+        if document_set is None:
             document = {}
+            document_set_name = None
         else:
-            document_set_config = config['document_sets'][document_set_name]
+            document_set_name = document_set['name']
             docs_by_id = {}
             # For later: for each run of run_variations (ie for each data item)
             # we are doing this load file operation for the same file. I note that
             # it can be optimized but I think there may be not significant gain in
             # the overall performance of the process. So keeping it simple for now.
-            with open(document_set_config['filename'], 'r') as infile:
+            with open(document_set['filename'], 'r') as infile:
                 for line in infile:
                     if not line.strip():
                         continue
@@ -162,27 +163,29 @@ def run_variations(data: dict, variations: dict, config: dict):
 
         # iterate over the prompts (a single override prompt file replaces the
         # whole set of variations['prompts'])
-        prompt_names = [None] if args.prompt_filename else variations['prompts']
-        for prompt_name in prompt_names:
+        prompts = [None] if args.prompt_filename else variations['prompts']
+        for prompt in prompts:
             if args.prompt_filename:
                 prompt_template_filename = args.prompt_filename
+                prompt_name = None
             else:
-                prompt_config = config['prompts'][prompt_name]
-                prompt_template_filename = prompt_config['template']['filename']
+                prompt_name = prompt['name']
+                prompt_template_filename = prompt['template']['filename']
             with open(prompt_template_filename, 'r') as file:
                 prompt_template = file.read()
 
             # iterate over the prompt const embeds (optional: skip if not defined)
-            prompt_const_embed_names = variations.get('prompt_const_embeds', [None])
-            for prompt_const_embed_name in prompt_const_embed_names:
-                if prompt_const_embed_name is None:
+            prompt_const_embeds = variations.get('prompt_const_embeds', [None])
+            for prompt_const_embed in prompt_const_embeds:
+                if prompt_const_embed is None:
+                    prompt_const_embed_name = None
                     const_embed_variables = {}
                 else:
-                    prompt_const_embed_config = config['prompt_const_embeds'][prompt_const_embed_name]
+                    prompt_const_embed_name = prompt_const_embed['name']
                     # convert to the "<var_name>_filename" convention expected by build_prompt
                     const_embed_variables = {
                         f'{var_name}_filename': var_config['filename']
-                        for var_name, var_config in prompt_const_embed_config.items()
+                        for var_name, var_config in prompt_const_embed['variables'].items()
                     }
 
                 variables = {**data, **document, **const_embed_variables}
@@ -194,7 +197,7 @@ def run_variations(data: dict, variations: dict, config: dict):
                 # set of variations['models'])
                 model_names = args.model.split(',') if args.model else variations['models']
                 for model_name in model_names:
-                    model_config = config['models'][model_name]
+                    model_config = models[model_name]
                     if 'name' not in model_config:
                         model_config['name'] = model_name
 
@@ -283,10 +286,8 @@ def cli():
         exit(1)
 
     scenario = config['scenarios'][args.scenario]
-    dataset_filename = args.dataset_filename or config['datasets'][scenario['dataset']]['filename']
-    # config_module.dataset = config['datasets'][scenario['dataset']]
-    # config_module.document_sets = config['document_sets']
-    config_module.data_schema = config['data_schemas'][scenario['data_schema']]
+    dataset_filename = args.dataset_filename or scenario['dataset']['filename']
+    config_module.data_schema = scenario['data_schema']
 
     print(f'Dataset filename: {dataset_filename}')
 
@@ -341,18 +342,21 @@ def cli():
                 continue
             # print(line.strip())
             data = json.loads(line.strip())
-            run_variations(data, scenario['variations'], config)
+            run_variations(data, scenario['variations'], config['models'])
 
     duration_ms = (perf_counter() - start) * 1000
-    meta_file_content = {}
-    meta_file_content['run_timestamp'] = run_timestamp
-    meta_file_content['config'] = config
-    meta_file_content['stats'] = {
-        'dataset_length': dataset_length,
-        'variations_count': variations_count,
-        'llm_calls': dataset_length * variations_count,
-        'duration_ms': f'{duration_ms:.0f}',
-    }
+    used_models = set(scenario['variations']['models'])
+
+    meta_file_content = {
+        'run_timestamp': run_timestamp,
+        'models': {k: v for k, v in config['models'].items() if k in used_models},
+        'scenario': scenario,
+        'stats': {
+            'dataset_length': dataset_length,
+            'variations_count': variations_count,
+            'llm_calls': dataset_length * variations_count,
+            'duration_ms': f'{duration_ms:.0f}',
+    }}
     with open(os.path.join(config_module.run_dir, 'meta.json'), 'w') as f:
         f.write(json.dumps(meta_file_content, indent=2))
 

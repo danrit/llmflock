@@ -14,10 +14,10 @@
 - Two additional extraction examples (beside EV attributes): image transformation, financial NER)
 - Write `output.jsonl` per run — one line per LLM call (see schema in `data/example1-ev/runs/YYYYMMDD-HHMISS/output.jsonl`)
 - Capture token counts and processing time per call (needed for `extracted.jsonl` and stats)
+- support for yaml anchor/alias - or in other words, simplify the current syntax of `config.yaml` where I have "mandated" to use "manual references" in the `scenario` object. ie that is a simplification.
 
 ### in progress
 
-- support for yaml anchor/alias - or in other words, simplify the current syntax of `config.yaml` where I have "mandated" to use "manual references" in the `scenario` object. ie that is a simplification.
 - `meta.json` still missing: scenario name and CLI args passed in
 
 ### Next - provide `llm` iso-functionality (for basic feature)
