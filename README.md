@@ -13,7 +13,9 @@ Note 3: how to we rate and compare (benchmark) the resulting output structured d
 - wanted to find an example of llm comparison tool: found [this one](https://www.simonpcouch.com/blog/2025-04-01-gemini-2-5-pro) (here applied to Gemini 2.5 Pro) from Simon P. Couch ([via](https://simonwillison.net/2026/Jan/20/electricity-use-of-ai-coding-agents/) then [via](https://www.simonpcouch.com/blog/2026-01-20-cc-impact/)) : which lead me to a even more popular approach ? [https://inspect.aisi.org.uk/] .....  take-aways are:
   - use a repeat parameter (epoch) to "Evaluate each sample multiple times to better quantify variation"
 
-Note 4: more thought one the viewing result part: need to have a too to aggregate results, adding comparison with one selected IDEAL run and output all of it in a easy spreadsheet format (csv, excel) for further analysis and visualization. aim to keep it to minimum, focusing on the llm-extract typical combining results for multi-run part.
+Note 4: more thought one the viewing result part: need to have a tool to aggregate results, adding comparison with one selected IDEAL run and output all of it in a easy spreadsheet format (csv, excel) for further analysis and visualization. by design, the tool will produce was amount of llm-generated data (over dataset and multiple variation) and exact match is illusionist / unrealistic goal. While study of individual result is still valuable to understand, an essential metric is CONVERGENCE, not EQUALITY when comparing generated data.
+
+Hence that tool `llmrunctl` aim to keep it to minimum, focusing on the run+extract part.
 
 
 **On where it sits in the ecosystem of LLM tools:** It is a LLM gateway: meaning it can call different LLM providers (local inference framework or cloud-hosted) with a rudimentary plugin system. If the project matures enough it could be beneficial the transition to a more established LLM gateway tool (like liteLLm, anyLLM).
