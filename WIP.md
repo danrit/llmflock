@@ -15,16 +15,16 @@
 - Write `output.jsonl` per run — one line per LLM call (see schema in `data/example1-ev/runs/YYYYMMDD-HHMISS/output.jsonl`)
 - Capture token counts and processing time per call (needed for `extracted.jsonl` and stats)
 - support for yaml anchor/alias - or in other words, simplify the current syntax of `config.yaml` where I have "mandated" to use "manual references" in the `scenario` object. ie that is a simplification.
+- update `meta.json` `scenarios` attribute: with the scenario name and CLI args passed in: during argument parsing / scenario preparation, build the "real-active" scenario (made of selected scenario in config.yaml + overrides with args) and that is the one used to build variations AND stored in meta.json. The intent with that is that meta.json contains everything to re-run the same scenario
 
 ### in progress
 
-- `meta.json` still missing: scenario name and CLI args passed in
 
 ### Next - provide `llm` iso-functionality (for basic feature)
 I want to allow user of popular `llm` tool to transition easy to that tool, that mean replicating some of the features, replicating the pattern, ie working WITHOUT config file.
 `parser.add_argument("prompt", help="...", nargs="?", default=None)`
 HEREHEREHER: have the entire system working WITHOUT a config.yaml file take a bit more time...
-doing there are more parameters that need to be optional: models options, document set, prompts... even dataset. I think that to make those ones optional i need to re-architecture the browsing of all variations: go away from "for loop intricated" to 2 steps process: Building the matrix/list of variations - running it (+ it will allow parallelization later...)
+doing there are more parameters that need to be optional: models options, document set, prompts... even dataset. I think that to make those optional i need to re-architecture the browsing of all variations: go away from "for loop intricated" to 2 steps process: Building the matrix/list of variations - running it (+ it will allow parallelization later...)
     - in config.py: I have tagged all the optional parameters.
     - next: update the looping: split in 2 AND accept the optional params
 
@@ -41,6 +41,7 @@ doing there are more parameters that need to be optional: models options, docume
 - export `output.jsonl` to spreadsheet
 - make model_options (tekp, top_p) optional and removing it from default config
 - add a sort of hash of experiment condition so future `llmrunviewer` can target only similar/relevant runs to compare.
+- with the tool available as a python package in pypi.org, need a way to make the 3 examples easily available to package user
 
 ### currently studied
 
@@ -50,18 +51,14 @@ With my latest commit about adding some command line options to run simpler scen
 - or just `llm 'tell me something about year 2020`
     - with setting the default model beforehand: `llm models default gpt-4o`
 
-Note: regarding llm options to deal with return of structure data: there are 2: [Extracting fenced code block](https://llm.datasette.io/en/stable/usage.html#extracting-fenced-code-blocks) and using [schema builtin ability of some models](https://llm.datasette.io/en/stable/usage.html#schemas) I much prefer the first option.
 
 Note2: one particular interesting (and similar to me) approach is the definition of https://llm.datasette.io/en/stable/templates.html#templates . Example: `llm --system 'Translate in French' --model gemma3:latest -o temperature 1.8 --save wild-french`
 
 a lot of similarities: "yeah and oh :(" at the same time.
 
-Anyway that make me thing that the best definition for this tool is not so much about "extracting", but it is about managing methodically multiple llm calls and capture structure results. Maybe a better name is "llm-batch", "llm-runs" "multiple-llm-runs" "llm-multirun", "llm-runner", "llm-matrix"... (llm-runner is a good one but py package python already taken) - maybe just `llmr` For LLM Runner (no dash, make it is easy to call on CLU often)
-
 And beside the UX for CLI of https://llm.datasette.io is good, proven (all the options defined from the outside I mean) so I want to replicate it wherever it make sense too.
 
-ANYWAY: i need to move on: I don't need to implement all the options of `llm` just one or 2 more and then carry on!
- 
+
 ## (note to publish)
 
 mostly following https://packaging.python.org/en/latest/guides/distributing-packages-using-setuptools/#upload-your-distributions

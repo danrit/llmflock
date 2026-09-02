@@ -6,6 +6,7 @@ import json
 import os
 from datetime import datetime
 from time import perf_counter
+from copy import deepcopy
 from jsonschema import validate, ValidationError
 
 # from dotenv import load_dotenv
@@ -163,14 +164,9 @@ def run_variations(data: dict, variations: dict, models: dict):
 
         # iterate over the prompts (a single override prompt file replaces the
         # whole set of variations['prompts'])
-        prompts = [None] if args.prompt_filename else variations['prompts']
-        for prompt in prompts:
-            if args.prompt_filename:
-                prompt_template_filename = args.prompt_filename
-                prompt_name = None
-            else:
-                prompt_name = prompt['name']
-                prompt_template_filename = prompt['template']['filename']
+        for prompt in variations['prompts']:
+            prompt_name = prompt['name']
+            prompt_template_filename = prompt['template']['filename']
             with open(prompt_template_filename, 'r') as file:
                 prompt_template = file.read()
 
@@ -195,7 +191,7 @@ def run_variations(data: dict, variations: dict, models: dict):
 
                 # iterate over the models (an override list replaces the whole
                 # set of variations['models'])
-                model_names = args.model.split(',') if args.model else variations['models']
+                model_names = variations['models']
                 for model_name in model_names:
                     model_config = models[model_name]
                     if 'name' not in model_config:
@@ -285,11 +281,26 @@ def cli():
         print(f"Scenario '{args.scenario}' not found in config.yaml")
         exit(1)
 
-    scenario = config['scenarios'][args.scenario]
-    dataset_filename = args.dataset_filename or scenario['dataset']['filename']
+    # Creating a detached/clone copy of the original data, as it will be
+    # overridden by various passed-on argument (right approach?)
+    scenario = deepcopy(config['scenarios'][args.scenario])
+    if args.dataset_filename:
+        scenario['dataset']['filename'] = args.dataset_filename
+
+    if args.model:
+        scenario['variations']['models'] = args.model.split(',')
+
+    if args.prompt_filename:
+        scenario['variations']['prompts'] = [{
+            'name': 'default',
+            'template': {
+                'filename': args.prompt_filename
+            }
+        }]
+
     config_module.data_schema = scenario['data_schema']
 
-    print(f'Dataset filename: {dataset_filename}')
+    print(f'Dataset filename: {scenario['dataset']['filename']}')
 
     # print('variations:', json.dumps(scenario['variations'], indent=2))
     # print('data_schema:', json.dumps(config_module.data_schema, indent=2))
@@ -302,7 +313,7 @@ def cli():
     variations_count *= factor
     variations.append(f'{factor} document set')
 
-    factor = 1 if args.prompt_filename else len(scenario['variations']['prompts'])
+    factor = len(scenario['variations']['prompts'])
     variations_count *= factor
     variations.append(f'{factor} prompt')
 
@@ -311,7 +322,7 @@ def cli():
     variations_count *= factor
     variations.append(f'{factor} prompt const embed')
 
-    factor = len(args.model.split(',')) if args.model else len(scenario['variations']['models'])
+    factor = len(scenario['variations']['models'])
     variations_count *= factor
     variations.append(f'{factor} model')
 
@@ -328,15 +339,15 @@ def cli():
     print(f'Total Variations: {variations_count} ({" x ".join(variations)})')
     
     dataset_length = 0
-    with open(dataset_filename, 'r') as infile:
+    with open(scenario['dataset']['filename'], 'r') as infile:
         dataset_length = sum(1 for line in infile if line.strip())
 
-    print(f'Total dataset items: {dataset_length} (in {dataset_filename})')
+    print(f'Total dataset items: {dataset_length} (in {scenario['dataset']['filename']})')
 
 
     # Iterate over the dataset and run the variations for each item:
     start = perf_counter()
-    with open(dataset_filename, 'r') as infile:
+    with open(scenario['dataset']['filename'], 'r') as infile:
         for line in infile:
             if not line.strip():
                 continue
@@ -350,7 +361,7 @@ def cli():
     meta_file_content = {
         'run_timestamp': run_timestamp,
         'models': {k: v for k, v in config['models'].items() if k in used_models},
-        'scenario': scenario,
+        'scenarios': {'default': scenario},
         'stats': {
             'dataset_length': dataset_length,
             'variations_count': variations_count,
