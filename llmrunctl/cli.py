@@ -226,8 +226,8 @@ def run_variations(data: dict, variations: dict, models: dict):
 
                                 duration_ms = (perf_counter() - start_variation) * 1000
 
-                                # output in extracted.jsonl
-                                extracted_record = {
+                                # output in output.jsonl
+                                record = {
                                     'id': data_id,
                                     'variation': {
                                         'document': document_set_name,
@@ -243,7 +243,7 @@ def run_variations(data: dict, variations: dict, models: dict):
                                     'duration_ms': f'{duration_ms:.0f}'
                                 }
                                 with open(os.path.join(config_module.run_dir, 'output.jsonl'), 'a') as f:
-                                    f.write(json.dumps(extracted_record) + '\n')
+                                    f.write(json.dumps(record) + '\n')
 
     return
 
