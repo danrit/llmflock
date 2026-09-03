@@ -19,14 +19,42 @@
 
 ### in progress
 
+#### context: provide `llm` iso-functionality (for basic feature)
 
-### Next - provide `llm` iso-functionality (for basic feature)
-I want to allow user of popular `llm` tool to transition easy to that tool, that mean replicating some of the features, replicating the pattern, ie working WITHOUT config file.
-`parser.add_argument("prompt", help="...", nargs="?", default=None)`
-HEREHEREHER: have the entire system working WITHOUT a config.yaml file take a bit more time...
-doing there are more parameters that need to be optional: models options, document set, prompts... even dataset. I think that to make those optional i need to re-architecture the browsing of all variations: go away from "for loop intricated" to 2 steps process: Building the matrix/list of variations - running it (+ it will allow parallelization later...)
-    - in config.py: I have tagged all the optional parameters.
-    - next: update the looping: split in 2 AND accept the optional params
+I want to allow user of popular [llm](https://llm.datasette.io/en/stable/index.html) tool to transition easy to that tool, that mean replicating some of the features, replicating the pattern, ie working WITHOUT config file. (note: To create an optional positional argument in Python using the argparse module, you need to use the nargs='?' parameter. eg: `parser.add_argument("prompt", help="...", nargs="?", default=None)`)
+(...)
+
+#### my thought process so far
+Have the entire system working WITHOUT a config.yaml file take a bit more time...
+doing there are more parameters that need to be optional: models options, document set, prompts... even dataset. I think that to make those optional I need to re-architecture the browsing of all variations: go away from "intricated loops" to 2 steps process: Building the matrix/list of variations - running it (+ it will allow parallelization later...)
+As a preliminary work in config.py: I have defined `config_default`, which contains what `scenario` can be at the minimum, that is stripped of all parameters that I want to make optional. My idea is that this default config should be the base of the `scenario` structure when the user is using it WITHOUT the YAML config file.
+
+#### Next step: update the looping
+
+There are 3 aims in this task
+- have the tool to work WITHOUT config.yaml passed-on, ie relying instead on the default `config_default` in `config.py`. The only argument that become mandatory WHEN non config.yaml is used is the prompt.
+- update `run_variations` to have all other variations parameters optional
+- split `run_variations` logic into 2:
+  - Building the matrix/list of variations
+  - Running it
+
+Replicating the features of the popular llm tool is not part of this task. (I'm yet too choose WHICH feature I want and WHICH I don't), Except for 3 simple ones to showcase the change:
+
+- submitting a prompt: `llm "extract Company and Location entities in JSON format from the following text: 'EU clears merger of Essilor , Luxottica without conditions'"`
+- switch from the default model: `llm "extract Company and Location entities in JSON format from the following text: 'EU clears merger of Essilor , Luxottica without conditions'" -m gpt-oss`
+- repeat: `llm "extract Company and Location entities in JSON format from the following text: 'EU clears merger of Essilor , Luxottica without conditions'" -r 3`
+
+Note: `data_schema` becoming optional, the extraction step can be skipped and in the `record` saved in `output.jsonl` file, create an extra attribute `response` containing the raw response of the LLM call.
+
+Test note: there are currently 3 working examples, they need to still work after the change:
+- `llmrunctl --configfile=data/example1-ev/config.yaml`
+- `llmrunctl --configfile=data/example2-img-transform/config.yaml`
+- `llmrunctl --configfile=data/example3-finance/config.yaml`
+
+#### Next - implement schema option
+
+Using LLM’s [concise schema syntax](https://llm.datasette.io/en/stable/schemas.html#schemas-dsl)
+`llm --schema 'name, age int, one_sentence_bio' 'invent a cool dog'`
 
 ### Next — OpenRouter provider
 - Add `openrouter` backend module (alongside `ollama_ollama.py` and `simonw_llm.py`)
