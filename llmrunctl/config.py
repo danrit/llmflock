@@ -4,10 +4,16 @@ Note: using this module as a centralized configuration point, data is modifiable
 """
 log_dir = '.'
 run_dir = '.' # required?
-data_schema = {}
-# dataset = {}
-# document_sets = {}
-# WIP Set a default model SO with that + few optional arguments the tool can be called WITHOUT config.yaml too
+# Set at runtime from the scenario. When None (no data_schema defined), the
+# extraction step is skipped and the raw LLM response is stored instead.
+data_schema = None
+
+# Base directory for logs/ and runs/ when the tool is used WITHOUT a config file.
+user_dir = '~/.llmrunctl'
+
+# Fallback model definition, used to synthesize a model configuration for a
+# model name that is not declared in the `models` section of the config
+# (typically `llmrunctl "<prompt>" -m <model>` without a config file).
 model_default = {
     'backend': 'ollama_ollama',
     'name': 'gemma3',
@@ -17,7 +23,10 @@ model_default = {
         'top_p': 'top_p',
     }
 }
-# WIP default config yaml when no config.yaml file is provided:
+
+# Default config used when no config.yaml file is provided: the minimal
+# scenario, stripped of every parameter that is optional. Only the prompt is
+# missing here: it is injected from the command line by `cli()`.
 config_default = {
     'models': {
         'gemma3': {
@@ -37,18 +46,11 @@ config_default = {
             # data_schema omitted
             'variations': {
                 # document_sets omitted
-                # prompt: the only thing to be populated
-                'prompts': [
-                    {
-                        'name': 'default',
-                        'template': {
-                            # approach a: prompt directly passed-on: with 'content' attribute TODO
-                            'content': '<HERE is the TEXT CONTENT of the PROMPT>',
-                            # approach b: prompt passed-on through a file with 'filename' attribute
-                            'filename': 'path/to/prompt.md'
-                        }
-                    }
-                ],
+                # prompt_const_embeds omitted
+                # prompts: populated from the command line, either as
+                # {'template': {'content': '<prompt text>'}} or
+                # {'template': {'filename': 'path/to/prompt.md'}}
+                'prompts': [],
                 'models': ['gemma3'],
                 'model_options': {
                     # temperature omitted

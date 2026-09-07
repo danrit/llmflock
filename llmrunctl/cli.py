@@ -1,4 +1,5 @@
 import argparse
+import itertools
 import re
 
 import llmrunctl.config as config_module
@@ -21,23 +22,31 @@ logger = logging.getLogger(__name__)
 
 parser = argparse.ArgumentParser(
     description="Run multiple LLM scenarios over dataset.")
+parser.add_argument('prompt', nargs='?', default=None,
+                    help="Prompt text to submit (mandatory when no --configfile is given)")
 parser.add_argument('-d', '--debug', action='store_true', default=False,
                     help="keep LLM prompts, responses, execution time (+...)")
 parser.add_argument('--dry-run', action='store_true', default=False,)
-parser.add_argument('-c', '--configfile', default='config.yaml',
-                    help="Specify the configuration file to use (default: config.yaml)")
+parser.add_argument('-c', '--configfile', default=None,
+                    help="Specify the configuration file to use (without it, the built-in default config is used)")
 parser.add_argument('--scenario', default='default',
                     help="Specify the scenario to run (see config.yaml)")
 parser.add_argument('--dataset-filename', default=None,
                     help="Override the dataset file specified in config.yaml")
 parser.add_argument('--prompt-filename', default=None,
                     help="Override the prompt template file specified in config.yaml")
-parser.add_argument('--model', default=None,
+parser.add_argument('-m', '--model', default=None,
                     help="Override the models specified in config.yaml (Comma-separated list of model names)")
+parser.add_argument('-r', '--repeats', type=int, default=None,
+                    help="Override the number of repeats of each variation")
 args = parser.parse_args()
 
 # Ollama-powered models all accept the Ollama modelfile parameters as options
 # see: https://github.com/ollama/ollama/blob/main/docs/modelfile.md#parameter
+
+# Hard-coded max tokens (never part of the variations)
+# TODO: move somewhere else?
+MAX_PREDICT_TOKENS = 8192
 
 # trying to stick to [Google Python Style Guide](https://google.github.io/styleguide/pyguide.html)
 
@@ -52,6 +61,7 @@ def logger_debug_file(content, filename, directory=None):
         logger.debug(f"File saved: {os.path.join(directory, filename)}")
 
 
+
 def build_prompt(template: str, variables: dict) -> str:
     """ Template processing function to build the prompt.
 
@@ -59,6 +69,12 @@ def build_prompt(template: str, variables: dict) -> str:
     :param variables:
     :return:
     """
+    # No variable at all (eg a prompt submitted directly on the command line):
+    # the template IS the prompt. Skipping .format() also keeps any literal
+    # brace of that prompt intact.
+    if not variables:
+        return template
+
     # if a variable name is suffixed by "_filename", load the file content
     # into a new variable named without that suffix (eg "doc_content_filename"
     # -> "doc_content")
@@ -135,127 +151,216 @@ def call_llm(prompt: str, model_config: dict, model_options: dict) -> dict:
     return response
 
 
-def run_variations(data: dict, variations: dict, models: dict):
-    data_id = data['id']
-    # print('data:', json.dumps(data, indent=2))
-    # print('data_schema:', json.dumps(data_schema, indent=2))
-    # print('variations:', json.dumps(variations, indent=2))
+def build_variations(variations_config: dict) -> list:
+    """Build the list of variations to run (the "matrix"), one dict per LLM call
+    (per dataset record).
 
-    # iterate over the document sets (optional: skip if not defined)
-    document_sets = variations.get('document_sets', [None])
-    for document_set in document_sets:
-        if document_set is None:
-            document = {}
-            document_set_name = None
-        else:
-            document_set_name = document_set['name']
-            docs_by_id = {}
-            # For later: for each run of run_variations (ie for each data item)
-            # we are doing this load file operation for the same file. I note that
-            # it can be optimized but I think there may be not significant gain in
-            # the overall performance of the process. So keeping it simple for now.
-            with open(document_set['filename'], 'r') as infile:
-                for line in infile:
-                    if not line.strip():
-                        continue
-                    item = json.loads(line.strip())
-                    docs_by_id[item['id']] = item
-            document = docs_by_id[data['id']]
+    Every parameter is optional but `prompts`: an omitted parameter simply
+    contributes a single "unset" value to the product.
 
-        # iterate over the prompts (a single override prompt file replaces the
-        # whole set of variations['prompts'])
-        for prompt in variations['prompts']:
-            prompt_name = prompt['name']
-            prompt_template_filename = prompt['template']['filename']
-            with open(prompt_template_filename, 'r') as file:
-                prompt_template = file.read()
+    :param variations_config: the `variations` object of the active scenario
+    :return: the flat list of variations, in nested-loop order
+    """
+    document_sets = variations_config.get('document_sets') or [None]
+    prompts = variations_config.get('prompts') or []
+    prompt_const_embeds = variations_config.get('prompt_const_embeds') or [None]
+    models = variations_config.get('models')
+    model_options_config = variations_config.get('model_options') or {}
+    repeats = variations_config.get('repeats', 1)
 
-            # iterate over the prompt const embeds (optional: skip if not defined)
-            prompt_const_embeds = variations.get('prompt_const_embeds', [None])
-            for prompt_const_embed in prompt_const_embeds:
-                if prompt_const_embed is None:
-                    prompt_const_embed_name = None
-                    const_embed_variables = {}
-                else:
-                    prompt_const_embed_name = prompt_const_embed['name']
-                    # convert to the "<var_name>_filename" convention expected by build_prompt
-                    const_embed_variables = {
-                        f'{var_name}_filename': var_config['filename']
-                        for var_name, var_config in prompt_const_embed['variables'].items()
-                    }
+    # the model options are generic: any key defined in the scenario is a
+    # dimension of the matrix, none of them is mandatory.
+    option_names = list(model_options_config.keys())
+    option_value_combinations = list(itertools.product(
+        *[model_options_config[name] for name in option_names]))
 
-                variables = {**data, **document, **const_embed_variables}
-                prompt = build_prompt(prompt_template, variables)
+    variations = []
+    for (document_set, prompt, prompt_const_embed, model, option_values,
+         repeat) in itertools.product(document_sets, prompts,
+                                      prompt_const_embeds, models,
+                                      option_value_combinations,
+                                      range(1, repeats + 1)):
+        variations.append({
+            'document_set': document_set,
+            'prompt': prompt,
+            'prompt_const_embed': prompt_const_embed,
+            'model': model,
+            'model_options': dict(zip(option_names, option_values)),
+            'repeat': repeat,
+        })
 
-                logger_debug_file(prompt, f'prompt-{data_id}-{document_set_name}-{prompt_name}-{prompt_const_embed_name}.md')
+    return variations
 
-                # iterate over the models (an override list replaces the whole
-                # set of variations['models'])
-                model_names = variations['models']
-                for model_name in model_names:
-                    model_config = models[model_name]
-                    if 'name' not in model_config:
-                        model_config['name'] = model_name
 
-                    # iterate over the model options temperature and top_p
-                    for temp in variations['model_options']['temperature']:
-                        for top_p in variations['model_options']['top_p']:
-                            model_options = {
-                                'temperature': temp,
-                                'top_p': top_p,
-                                # Hard-coded max tokens (never part of the variations)
-                                # TODO: move somewhere else?
-                                'max_predict_tokens': 8192,
-                            }
+def variations_breakdown(variations_config: dict) -> str:
+    """Human readable breakdown of the variations matrix (eg "1 document set x
+    2 prompt x 1 model x 3 temperature x 1 repeat")."""
+    factors = [
+        (len(variations_config.get('document_sets') or [None]), 'document set'),
+        (len(variations_config.get('prompts') or []), 'prompt'),
+        (len(variations_config.get('prompt_const_embeds') or [None]), 'prompt const embed'),
+        (len(variations_config.get('models') or [None]), 'model'),
+    ]
+    for parameter, values in (variations_config.get('model_options') or {}).items():
+        factors.append((len(values), parameter))
+    factors.append((variations_config.get('repeats', 1), 'repeat'))
 
-                            # iterate over the number of repeats
-                            for repeat in range(1, variations['repeats'] + 1):
-                                print(f'LLM Call for id={data_id} doc={document_set_name}, prompt={prompt_name}, const_embed={prompt_const_embed_name}, model={model_name}, temp={temp}, top_p={top_p}, repeat={repeat}')
-                                if args.dry_run:
-                                    continue
+    return ' x '.join(f'{count} {label}' for count, label in factors)
 
-                                start_variation = perf_counter()
-                                response = call_llm(prompt, model_config, model_options)
 
-                                logger_debug_file(response['data']['text'],
-                                                  f'response-{data_id}-{document_set_name}-{prompt_name}-{prompt_const_embed_name}-{model_name}-temp{temp}-topp{top_p}-repeat{repeat}.txt')
+def variation_label(variation: dict) -> dict:
+    """The identity of a variation, as stored in output.jsonl and used to name
+    the debug files."""
+    document_set = variation['document_set']
+    prompt_const_embed = variation['prompt_const_embed']
+    return {
+        'document': document_set['name'] if document_set else None,
+        'prompt': variation['prompt']['name'],
+        'prompt_const_embed': prompt_const_embed['name'] if prompt_const_embed else None,
+        'model': variation['model'],
+        'model_options': variation['model_options'],
+        'repeat': variation['repeat'],
+    }
 
-                                # extract and validate JSON from response
-                                extracted_data = extract_validate_json(response['data']['text'], config_module.data_schema)
-                                logger.debug('Extracted data: ' + json.dumps(extracted_data))
 
-                                duration_ms = (perf_counter() - start_variation) * 1000
+def variation_slug(data_id, label: dict) -> str:
+    """Filename-friendly rendering of a variation label."""
+    options = '-'.join(f'{name}{value}'
+                       for name, value in label['model_options'].items())
+    parts = [str(data_id), str(label['document']), str(label['prompt']),
+             str(label['prompt_const_embed']), str(label['model'])]
+    if options:
+        parts.append(options)
+    parts.append(f'repeat{label["repeat"]}')
+    return '-'.join(parts)
 
-                                # output in output.jsonl
-                                record = {
-                                    'id': data_id,
-                                    'variation': {
-                                        'document': document_set_name,
-                                        'prompt': prompt_name,
-                                        'prompt_const_embed': prompt_const_embed_name,
-                                        'model': model_name,
-                                        'temp': temp,
-                                        'top_p': top_p,
-                                        'repeat': repeat,
-                                    },
-                                    'llm_call': response['meta'],
-                                    'extraction': extracted_data,
-                                    'duration_ms': f'{duration_ms:.0f}'
-                                }
-                                with open(os.path.join(config_module.run_dir, 'output.jsonl'), 'a') as f:
-                                    f.write(json.dumps(record) + '\n')
+
+def run_variation(data: dict, variation: dict, models: dict):
+    """Run a single variation for a single dataset record (one LLM call)."""
+    data_id = data.get('id')
+    label = variation_label(variation)
+
+    # the document set is optional: without it the record carries no
+    # variation-specific data
+    document_set = variation['document_set']
+    if document_set is None:
+        document = {}
+    else:
+        docs_by_id = {}
+        # For later: for each run of run_variations (ie for each data item)
+        # we are doing this load file operation for the same file. I note that
+        # it can be optimized but I think there may be not significant gain in
+        # the overall performance of the process. So keeping it simple for now.
+        with open(document_set['filename'], 'r') as infile:
+            for line in infile:
+                if not line.strip():
+                    continue
+                item = json.loads(line.strip())
+                docs_by_id[item['id']] = item
+        document = docs_by_id[data_id]
+
+    # the prompt template is either passed directly ('content')
+    #  or read from a file ('filename')
+    template = variation['prompt']['template']
+    if template.get('content') is not None:
+        prompt_template = template['content']
+    else:
+        with open(template['filename'], 'r') as file:
+            prompt_template = file.read()
+
+    prompt_const_embed = variation['prompt_const_embed']
+    if prompt_const_embed is None:
+        const_embed_variables = {}
+    else:
+        # convert to the "<var_name>_filename" convention expected by build_prompt
+        const_embed_variables = {
+            f'{var_name}_filename': var_config['filename']
+            for var_name, var_config in prompt_const_embed['variables'].items()
+        }
+
+    variables = {**data, **document, **const_embed_variables}
+    prompt = build_prompt(prompt_template, variables)
+
+    # the prompt only depends on the record + document set + prompt + const
+    # embed, hence the shorter filename here
+    logger_debug_file(prompt, 'prompt-{}-{}-{}-{}.md'.format(
+        data_id, label['document'], label['prompt'], label['prompt_const_embed']))
+
+    model_config = models[variation['model']]
+    model_options = {**variation['model_options'],
+                     'max_predict_tokens': MAX_PREDICT_TOKENS}
+
+    print('LLM Call for id={} doc={}, prompt={}, const_embed={}, model={}, options={}, repeat={}'.format(
+        data_id, label['document'], label['prompt'], label['prompt_const_embed'],
+        label['model'], json.dumps(label['model_options']), label['repeat']))
+    if args.dry_run:
+        return
+
+    start_variation = perf_counter()
+    response = call_llm(prompt, model_config, model_options)
+
+    logger_debug_file(response['data']['text'],
+                      f'response-{variation_slug(data_id, label)}.txt')
+
+    record = {
+        'id': data_id,
+        'variation': label,
+        'llm_call': response['meta'],
+    }
+
+    # the data schema is optional: without it there is nothing to extract and
+    # validate, so the raw LLM response is stored instead
+    if config_module.data_schema:
+        extracted_data = extract_validate_json(response['data']['text'],
+                                               config_module.data_schema)
+        logger.debug('Extracted data: ' + json.dumps(extracted_data))
+        record['extraction'] = extracted_data
+    else:
+        record['response'] = response['data']['text']
+
+    record['duration_ms'] = f'{(perf_counter() - start_variation) * 1000:.0f}'
+
+    # output in output.jsonl
+    with open(os.path.join(config_module.run_dir, 'output.jsonl'), 'a') as f:
+        f.write(json.dumps(record) + '\n')
 
     return
 
 
+def run_variations(dataset, variations: list, models: dict):
+    """Run every variation of the matrix for every record of the dataset."""
+    for data in dataset:
+        for variation in variations:
+            run_variation(data, variation, models)
+
+    return
+
+
+def read_dataset(filename: str):
+    """Yield the records of a dataset jsonl file."""
+    with open(filename, 'r') as infile:
+        for line in infile:
+            if not line.strip():
+                continue
+            yield json.loads(line.strip())
+
+
 # if __name__ == "__main__":
 def cli():
-    # Load the config file config.yaml:
-    with open(args.configfile, 'r') as file:
-        config = yaml.safe_load(file)
+    if not args.configfile and not args.prompt:
+        parser.error('a prompt or a --configfile is required')
 
-    logs_dir = os.path.join(os.path.dirname(args.configfile), 'logs')
-    runs_dir = os.path.join(os.path.dirname(args.configfile), 'runs')
+    if args.configfile:
+        # Load the config file config.yaml:
+        with open(args.configfile, 'r') as file:
+            config = yaml.safe_load(file)
+        base_dir = os.path.dirname(args.configfile)
+    else:
+        config = deepcopy(config_module.config_default)
+        base_dir = os.path.expanduser(config_module.user_dir)
+
+    logs_dir = os.path.join(base_dir, 'logs')
+    runs_dir = os.path.join(base_dir, 'runs')
     run_timestamp = datetime.now().strftime('%Y%m%d-%H%M%S')
     config_module.log_dir = os.path.join(logs_dir, run_timestamp)
     config_module.run_dir = os.path.join(runs_dir, run_timestamp)
@@ -278,98 +383,99 @@ def cli():
     # api_key = os.getenv('API_KEY')
 
     if args.scenario not in config['scenarios']:
-        print(f"Scenario '{args.scenario}' not found in config.yaml")
+        print(f"Scenario '{args.scenario}' not found in "
+              f"{args.configfile if args.configfile else 'the default config'}")
         exit(1)
 
     # Creating a detached/clone copy of the original data, as it will be
     # overridden by various passed-on argument (right approach?)
     scenario = deepcopy(config['scenarios'][args.scenario])
+    variations_config = scenario['variations']
+
     if args.dataset_filename:
-        scenario['dataset']['filename'] = args.dataset_filename
+        scenario['dataset'] = {'filename': args.dataset_filename}
 
     if args.model:
-        scenario['variations']['models'] = args.model.split(',')
+        variations_config['models'] = args.model.split(',')
 
+    if args.repeats is not None:
+        variations_config['repeats'] = args.repeats
+
+    # a prompt passed on the command line (text or file) replaces the whole set
+    # of variations['prompts']
     if args.prompt_filename:
-        scenario['variations']['prompts'] = [{
+        variations_config['prompts'] = [{
             'name': 'default',
             'template': {
                 'filename': args.prompt_filename
             }
         }]
+    elif args.prompt:
+        variations_config['prompts'] = [{
+            'name': 'default',
+            'template': {
+                'content': args.prompt
+            }
+        }]
 
-    config_module.data_schema = scenario['data_schema']
+    if not variations_config.get('prompts'):
+        print('No prompt defined: pass a prompt, --prompt-filename, or define one in the config file')
+        exit(1)
 
-    print(f'Dataset filename: {scenario['dataset']['filename']}')
+    # data_schema is optional (without it the extraction step is skipped)
+    config_module.data_schema = scenario.get('data_schema')
 
-    # print('variations:', json.dumps(scenario['variations'], indent=2))
-    # print('data_schema:', json.dumps(config_module.data_schema, indent=2))
+    # every model of the scenario must be defined in the `models` section of
+    # the config
+    model_names = variations_config.get('models')
+    models_config = config.get('models') or {}
+    models_undefined = [name for name in model_names if name not in models_config]
+    if models_undefined:
+        print("Model(s) {} not found in {}".format(
+            ', '.join(f"'{name}'" for name in models_undefined),
+            args.configfile if args.configfile else 'the default config'))
+        exit(1)
 
-    variations = []
-    variations_count = 1
+    models = {name: deepcopy(models_config[name]) for name in model_names}
+    for model_name, model_config in models.items():
+        # the model name defaults to the key of the `models` section
+        model_config.setdefault('name', model_name)
 
-    # document_sets is optional
-    factor = len(scenario['variations'].get('document_sets', [None]))
-    variations_count *= factor
-    variations.append(f'{factor} document set')
+    variations = build_variations(variations_config)
+    print(f'Total Variations: {len(variations)} ({variations_breakdown(variations_config)})')
 
-    factor = len(scenario['variations']['prompts'])
-    variations_count *= factor
-    variations.append(f'{factor} prompt')
-
-    # prompt_const_embeds is optional
-    factor = len(scenario['variations'].get('prompt_const_embeds', [None]))
-    variations_count *= factor
-    variations.append(f'{factor} prompt const embed')
-
-    factor = len(scenario['variations']['models'])
-    variations_count *= factor
-    variations.append(f'{factor} model')
-
-    for parameter, values in scenario['variations']['model_options'].items():
-        # print(f"Parameter: {parameter}, Values: {values}")
-        # print(f'Total variations: {len(values)}')
-        variations_count *= len(values)
-        variations.append(f'{len(values)} {parameter}')
-
-    factor = scenario['variations']['repeats']
-    variations_count *= factor
-    variations.append(f'{factor} repeat')
-
-    print(f'Total Variations: {variations_count} ({" x ".join(variations)})')
-    
-    dataset_length = 0
-    with open(scenario['dataset']['filename'], 'r') as infile:
-        dataset_length = sum(1 for line in infile if line.strip())
-
-    print(f'Total dataset items: {dataset_length} (in {scenario['dataset']['filename']})')
-
+    # the dataset is optional: without it a single synthetic record is used
+    dataset_config = scenario.get('dataset')
+    if dataset_config:
+        dataset_filename = dataset_config['filename']
+        with open(dataset_filename, 'r') as infile:
+            dataset_length = sum(1 for line in infile if line.strip())
+        dataset = read_dataset(dataset_filename)
+        print(f'Total dataset items: {dataset_length} (in {dataset_filename})')
+    else:
+        dataset_length = 1
+        dataset = [{'id': None}]
+        print('No dataset: running the variations once')
 
     # Iterate over the dataset and run the variations for each item:
     start = perf_counter()
-    with open(scenario['dataset']['filename'], 'r') as infile:
-        for line in infile:
-            if not line.strip():
-                continue
-            # print(line.strip())
-            data = json.loads(line.strip())
-            run_variations(data, scenario['variations'], config['models'])
+    run_variations(dataset, variations, models)
 
     duration_ms = (perf_counter() - start) * 1000
-    used_models = set(scenario['variations']['models'])
 
     meta_file_content = {
         'run_timestamp': run_timestamp,
-        'models': {k: v for k, v in config['models'].items() if k in used_models},
+        'models': models,
         'scenarios': {'default': scenario},
         'stats': {
             'dataset_length': dataset_length,
-            'variations_count': variations_count,
-            'llm_calls': dataset_length * variations_count,
+            'variations_count': len(variations),
+            'llm_calls': dataset_length * len(variations),
             'duration_ms': f'{duration_ms:.0f}',
     }}
     with open(os.path.join(config_module.run_dir, 'meta.json'), 'w') as f:
         f.write(json.dumps(meta_file_content, indent=2))
 
     print(f'Run completed in {duration_ms:.0f}ms')
+    print(f'Run output: {config_module.run_dir}')
     logger.info(f'Run completed in {duration_ms:.0f}ms')

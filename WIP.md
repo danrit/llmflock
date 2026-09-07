@@ -16,6 +16,7 @@
 - Capture token counts and processing time per call (needed for `extracted.jsonl` and stats)
 - support for yaml anchor/alias - or in other words, simplify the current syntax of `config.yaml` where I have "mandated" to use "manual references" in the `scenario` object. ie that is a simplification.
 - update `meta.json` `scenarios` attribute: with the scenario name and CLI args passed in: during argument parsing / scenario preparation, build the "real-active" scenario (made of selected scenario in config.yaml + overrides with args) and that is the one used to build variations AND stored in meta.json. The intent with that is that meta.json contains everything to re-run the same scenario
+- update the looping: work WITHOUT a `config.yaml` (falling back on `config_default`), every variation parameter optional, and `run_variations` split into `build_variations()` (the matrix) + `run_variations()`/`run_variation()` (running it). See "the looping" notes below.
 
 ### in progress
 
@@ -29,27 +30,22 @@ Have the entire system working WITHOUT a config.yaml file take a bit more time..
 doing there are more parameters that need to be optional: models options, document set, prompts... even dataset. I think that to make those optional I need to re-architecture the browsing of all variations: go away from "intricated loops" to 2 steps process: Building the matrix/list of variations - running it (+ it will allow parallelization later...)
 As a preliminary work in config.py: I have defined `config_default`, which contains what `scenario` can be at the minimum, that is stripped of all parameters that I want to make optional. My idea is that this default config should be the base of the `scenario` structure when the user is using it WITHOUT the YAML config file.
 
-#### Next step: update the looping
+#### Done: update the looping — implementation notes
 
-There are 3 aims in this task
-- have the tool to work WITHOUT config.yaml passed-on, ie relying instead on the default `config_default` in `config.py`. The only argument that become mandatory WHEN non config.yaml is used is the prompt.
-- update `run_variations` to have all other variations parameters optional
-- split `run_variations` logic into 2:
-  - Building the matrix/list of variations
-  - Running it
+Decisions taken while implementing (all 3 aims done):
 
-Replicating the features of the popular llm tool is not part of this task. (I'm yet too choose WHICH feature I want and WHICH I don't), Except for 3 simple ones to showcase the change:
+- CLI: `prompt` is now an optional positional argument (`nargs='?'`), `-m/--model` and the new `-r/--repeats` override the scenario. `-c/--configfile` no longer defaults to `config.yaml`: a bare `llmrunctl` errors, a prompt OR a `--configfile` is required.
+- Without a config file, `config_default` (in `config.py`) is the base scenario and the prompt is injected as `prompts[0].template.content` (`build_prompt` skips `.format()` when there is no variable, so braces in an ad-hoc prompt are safe).
+- Without a config file, `logs/` and `runs/` go to `~/.llmrunctl/` (`config.user_dir`) instead of the config file's directory.
+- Without a `dataset`, a single synthetic record `{'id': None}` is used; its null id contributes no prompt variable and is stored as `"id": null` in `output.jsonl`.
+- `model_options` is now generic: every key of `variations.model_options` is a dimension of the matrix (no more hard-coded temperature/top_p loops), and `output.jsonl` stores them nested: `variation.model_options: {temperature, top_p}` — replaces the former flat `variation.temp` / `variation.top_p`.
+- A model requested but not declared in the `models` section (of the config file, or of `config_default`) is an error: message + exit, like the other invalid arguments. Consequence: `-m <model>` without a config file only accepts the models declared in `config_default['models']` (today: `gemma3`).
+- Without a `data_schema`, the extraction is skipped and the record carries `response` (raw LLM text) instead of `extraction`.
 
-- submitting a prompt: `llm "extract Company and Location entities in JSON format from the following text: 'EU clears merger of Essilor , Luxottica without conditions'"`
-- switch from the default model: `llm "extract Company and Location entities in JSON format from the following text: 'EU clears merger of Essilor , Luxottica without conditions'" -m gpt-oss`
-- repeat: `llm "extract Company and Location entities in JSON format from the following text: 'EU clears merger of Essilor , Luxottica without conditions'" -r 3`
-
-Note: `data_schema` becoming optional, the extraction step can be skipped and in the `record` saved in `output.jsonl` file, create an extra attribute `response` containing the raw response of the LLM call.
-
-Test note: there are currently 3 working examples, they need to still work after the change:
-- `llmrunctl --configfile=data/example1-ev/config.yaml`
-- `llmrunctl --configfile=data/example2-img-transform/config.yaml`
-- `llmrunctl --configfile=data/example3-finance/config.yaml`
+The 3 examples were re-run and still work; the 3 showcase commands work too:
+- `llmrunctl "extract Company and Location entities in JSON format from the following text: 'EU clears merger of Essilor , Luxottica without conditions'"`
+- same with `-m gpt-oss` — needs `gpt-oss` declared in `config_default['models']` (see the model error rule above)
+- same with `-r 3`
 
 #### Next - implement schema option
 
