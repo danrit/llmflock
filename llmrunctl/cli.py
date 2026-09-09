@@ -347,8 +347,8 @@ def read_dataset(filename: str):
 
 # if __name__ == "__main__":
 def cli():
-    if not args.configfile and not args.prompt:
-        parser.error('a prompt or a --configfile is required')
+    if not args.configfile and not args.prompt and not args.prompt_filename:
+        parser.error('a prompt (direct or through prompt-filename) or a --configfile is required')
 
     if args.configfile:
         # Load the config file config.yaml:
