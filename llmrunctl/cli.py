@@ -1,4 +1,5 @@
 import argparse
+import csv
 import itertools
 import re
 
@@ -337,12 +338,23 @@ def run_variations(dataset, variations: list, models: dict):
 
 
 def read_dataset(filename: str):
-    """Yield the records of a dataset jsonl file."""
-    with open(filename, 'r') as infile:
-        for line in infile:
-            if not line.strip():
-                continue
-            yield json.loads(line.strip())
+    """Yield the records of a dataset file (.jsonl or .csv), detected by file extension."""
+    ext = os.path.splitext(filename)[1].lower()
+    if ext == '.csv':
+        with open(filename, 'r', newline='') as infile:
+            for record in csv.DictReader(infile):
+                if not record.get('id'):
+                    raise ValueError(f"Dataset record missing mandatory 'id' field: {record}")
+                yield record
+    else:
+        with open(filename, 'r') as infile:
+            for line in infile:
+                if not line.strip():
+                    continue
+                record = json.loads(line.strip())
+                if not record.get('id'):
+                    raise ValueError(f"Dataset record missing mandatory 'id' field: {record}")
+                yield record
 
 
 # if __name__ == "__main__":
@@ -448,9 +460,8 @@ def cli():
     dataset_config = scenario.get('dataset')
     if dataset_config:
         dataset_filename = dataset_config['filename']
-        with open(dataset_filename, 'r') as infile:
-            dataset_length = sum(1 for line in infile if line.strip())
-        dataset = read_dataset(dataset_filename)
+        dataset = list(read_dataset(dataset_filename))
+        dataset_length = len(dataset)
         print(f'Total dataset items: {dataset_length} (in {dataset_filename})')
     else:
         dataset_length = 1
