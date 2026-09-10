@@ -30,3 +30,14 @@ Hence that tool `llmrunctl` aim to keep it to minimum, focusing on the run+extra
 ## Usage
 
 To run the example in `data/example1-ev`, use the command: `llmr --configfile=data/example1-ev/config.yaml` or `llmr --configfile=data/example1-ev/config.yaml --debug`
+
+### Examples
+
+- submitting a prompt: `llm "extract Company and Location entities in JSON format from the following text: 'EU clears merger of Essilor , Luxottica without conditions'"`
+- switch from the default model: `llm "extract Company and Location entities in JSON format from the following text: 'EU clears merger of Essilor , Luxottica without conditions'" -m gpt-oss` (note: the model need to be defined in the default config)
+- specify repeat count: `llm "extract Company and Location entities in JSON format from the following text: 'EU clears merger of Essilor , Luxottica without conditions'" -r 3`
+
+There are also currently 3 working examples based on provided config file (and associated data):
+- `llmrunctl --configfile=data/example1-ev/config.yaml`
+- `llmrunctl --configfile=data/example2-img-transform/config.yaml`
+- `llmrunctl --configfile=data/example3-finance/config.yaml`
