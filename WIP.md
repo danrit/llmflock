@@ -16,36 +16,29 @@
 - Capture token counts and processing time per call (needed for `extracted.jsonl` and stats)
 - support for yaml anchor/alias - or in other words, simplify the current syntax of `config.yaml` where I have "mandated" to use "manual references" in the `scenario` object. ie that is a simplification.
 - update `meta.json` `scenarios` attribute: with the scenario name and CLI args passed in: during argument parsing / scenario preparation, build the "real-active" scenario (made of selected scenario in config.yaml + overrides with args) and that is the one used to build variations AND stored in meta.json. The intent with that is that meta.json contains everything to re-run the same scenario
-- update the looping: work WITHOUT a `config.yaml` (falling back on `config_default`), every variation parameter optional, and `run_variations` split into `build_variations()` (the matrix) + `run_variations()`/`run_variation()` (running it). See "the looping" notes below.
+- update the looping: work WITHOUT a `config.yaml` (falling back on `config_default`), every variation parameter optional, and `run_variations` split into `build_variations()` (the matrix) + `run_variations()`/`run_variation()` (running it).
 
 ### in progress
 
-#### context: provide `llm` iso-functionality (for basic feature)
+#### provide `llm` iso-functionality (for basic feature)
 
 I want to allow user of popular [llm](https://llm.datasette.io/en/stable/index.html) tool to transition easy to that tool, that mean replicating some of the features, replicating the pattern, ie working WITHOUT config file. (note: To create an optional positional argument in Python using the argparse module, you need to use the nargs='?' parameter. eg: `parser.add_argument("prompt", help="...", nargs="?", default=None)`)
 (...)
 
-#### my thought process so far
-Have the entire system working WITHOUT a config.yaml file take a bit more time...
-doing there are more parameters that need to be optional: models options, document set, prompts... even dataset. I think that to make those optional I need to re-architecture the browsing of all variations: go away from "intricated loops" to 2 steps process: Building the matrix/list of variations - running it (+ it will allow parallelization later...)
-As a preliminary work in config.py: I have defined `config_default`, which contains what `scenario` can be at the minimum, that is stripped of all parameters that I want to make optional. My idea is that this default config should be the base of the `scenario` structure when the user is using it WITHOUT the YAML config file.
+### Next item
 
-#### Done: update the looping — implementation notes
+Support csv format dataset option? `--dataset-filename=data.csv`
+Keep the signature of the function `read_dataset` unchanged. My idea is that the output of that function `dataset` is a good format for that purpose (an array of dictionary). And by remaining unchanged further processing (from `run_variations`) is unaffected. Hence I assume that, for a CSV dataset, the new implementation need to generate the `dataset` array from headers and data of the CSV file.
+Use the [example4](./data/example4-noconfig) to validate the change: it contains 
+- [dataset.csv](./data/example4-noconfig/dataset.csv): a sample data including the mandatory `id` attribute and the example specific `count_question` attribute. 
+- [PROMPT.md](./data/example4-noconfig/PROMPT.md): a related prompt, including usage of the variable `count_question`
 
-Decisions taken while implementing (all 3 aims done):
+For both json and csv format, at the `read_dataset` stage, implement a check for mandatory field `id`.
 
-- CLI: `prompt` is now an optional positional argument (`nargs='?'`), `-m/--model` and the new `-r/--repeats` override the scenario. `-c/--configfile` no longer defaults to `config.yaml`: a bare `llmrunctl` errors, a prompt OR a `--configfile` is required.
-- Without a config file, `config_default` (in `config.py`) is the base scenario and the prompt is injected as `prompts[0].template.content` (`build_prompt` skips `.format()` when there is no variable, so braces in an ad-hoc prompt are safe).
-- Without a config file, `logs/` and `runs/` go to `~/.llmrunctl/` (`config.user_dir`) instead of the config file's directory.
-- Without a `dataset`, a single synthetic record `{'id': None}` is used; its null id contributes no prompt variable and is stored as `"id": null` in `output.jsonl`.
-- `model_options` is now generic: every key of `variations.model_options` is a dimension of the matrix (no more hard-coded temperature/top_p loops), and `output.jsonl` stores them nested: `variation.model_options: {temperature, top_p}` — replaces the former flat `variation.temp` / `variation.top_p`.
-- A model requested but not declared in the `models` section (of the config file, or of `config_default`) is an error: message + exit, like the other invalid arguments. Consequence: `-m <model>` without a config file only accepts the models declared in `config_default['models']` (today: `gemma3`).
-- Without a `data_schema`, the extraction is skipped and the record carries `response` (raw LLM text) instead of `extraction`.
+I want to keep thing simple so I suppose the dataset file format detection will be done simply on the file extension but prompt me if there is another good simple approach is possible.
 
-The 3 examples were re-run and still work; the 3 showcase commands work too:
-- `llmrunctl "extract Company and Location entities in JSON format from the following text: 'EU clears merger of Essilor , Luxottica without conditions'"`
-- same with `-m gpt-oss` — needs `gpt-oss` declared in `config_default['models']` (see the model error rule above)
-- same with `-r 3`
+Prompt me if some of the requirements appears missing, conflicting or for design choice.
+
 
 #### Next - implement schema option
 
@@ -63,9 +56,13 @@ Using LLM’s [concise schema syntax](https://llm.datasette.io/en/stable/schemas
 - Aggregate results across runs into CSV/JSON
 - Result comparison: pick an "ideal" run: can be the run of on (big) model OR a user-defined `ground_truth.jsonl`, diff others against it. Note: there is not always a ground_truth, but that can useful for my tests while developing.
 - export `output.jsonl` to spreadsheet
-- make model_options (tekp, top_p) optional and removing it from default config
 - add a sort of hash of experiment condition so future `llmrunviewer` can target only similar/relevant runs to compare.
 - with the tool available as a python package in pypi.org, need a way to make the 3 examples easily available to package user
+- make a default naming for models provided by on backend (example if ollama backend is available, all the local models of that bakend should be available with the `--models=modela,modelb` option.) ie moving `config_module.model_default` to `ollama` backend source
+- do a output format option `-o`, default to json
+  - pretty-print output
+  - csv output
+- implicitly implement check on whether the variable used in prompt are defined in the dataset
 
 ### currently studied
 

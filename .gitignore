@@ -18,6 +18,9 @@
 /data/example3-finance/*
 !/data/example3-finance/documents
 !/data/example3-finance/*.*
+!/data/example4-noconfig/
+/data/example4-noconfig/*
+!/data/example4-noconfig/*.*
 
 # Python
 # Byte-compiled / optimized / DLL files
