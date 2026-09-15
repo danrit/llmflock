@@ -152,22 +152,22 @@ def call_llm(prompt: str, model_config: dict, model_options: dict) -> dict:
     return response
 
 
-def build_variations(variations_config: dict) -> list:
+def build_variations(scenario_variations: dict) -> list:
     """Build the list of variations to run (the "matrix"), one dict per LLM call
     (per dataset record).
 
     Every parameter is optional but `prompts`: an omitted parameter simply
     contributes a single "unset" value to the product.
 
-    :param variations_config: the `variations` object of the active scenario
+    :param scenario_variations: the `variations` object of the active scenario
     :return: the flat list of variations, in nested-loop order
     """
-    document_sets = variations_config.get('document_sets') or [None]
-    prompts = variations_config.get('prompts') or []
-    prompt_const_embeds = variations_config.get('prompt_const_embeds') or [None]
-    models = variations_config.get('models')
-    model_options_config = variations_config.get('model_options') or {}
-    repeats = variations_config.get('repeats', 1)
+    document_sets = scenario_variations.get('document_sets') or [None]
+    prompts = scenario_variations.get('prompts') or []
+    prompt_const_embeds = scenario_variations.get('prompt_const_embeds') or [None]
+    models = scenario_variations.get('models')
+    model_options_config = scenario_variations.get('model_options') or {}
+    repeats = scenario_variations.get('repeats', 1)
 
     # the model options are generic: any key defined in the scenario is a
     # dimension of the matrix, none of them is mandatory.
@@ -193,18 +193,18 @@ def build_variations(variations_config: dict) -> list:
     return variations
 
 
-def variations_breakdown(variations_config: dict) -> str:
+def variations_breakdown(scenario_variations: dict) -> str:
     """Human readable breakdown of the variations matrix (eg "1 document set x
     2 prompt x 1 model x 3 temperature x 1 repeat")."""
     factors = [
-        (len(variations_config.get('document_sets') or [None]), 'document set'),
-        (len(variations_config.get('prompts') or []), 'prompt'),
-        (len(variations_config.get('prompt_const_embeds') or [None]), 'prompt const embed'),
-        (len(variations_config.get('models') or [None]), 'model'),
+        (len(scenario_variations.get('document_sets') or [None]), 'document set'),
+        (len(scenario_variations.get('prompts') or []), 'prompt'),
+        (len(scenario_variations.get('prompt_const_embeds') or [None]), 'prompt const embed'),
+        (len(scenario_variations.get('models') or [None]), 'model'),
     ]
-    for parameter, values in (variations_config.get('model_options') or {}).items():
+    for parameter, values in (scenario_variations.get('model_options') or {}).items():
         factors.append((len(values), parameter))
-    factors.append((variations_config.get('repeats', 1), 'repeat'))
+    factors.append((scenario_variations.get('repeats', 1), 'repeat'))
 
     return ' x '.join(f'{count} {label}' for count, label in factors)
 
@@ -402,35 +402,35 @@ def cli():
     # Creating a detached/clone copy of the original data, as it will be
     # overridden by various passed-on argument (right approach?)
     scenario = deepcopy(config['scenarios'][args.scenario])
-    variations_config = scenario['variations']
+    scenario_variations = scenario['variations']
 
     if args.dataset_filename:
         scenario['dataset'] = {'filename': args.dataset_filename}
 
     if args.model:
-        variations_config['models'] = args.model.split(',')
+        scenario_variations['models'] = args.model.split(',')
 
     if args.repeats is not None:
-        variations_config['repeats'] = args.repeats
+        scenario_variations['repeats'] = args.repeats
 
     # a prompt passed on the command line (text or file) replaces the whole set
     # of variations['prompts']
     if args.prompt_filename:
-        variations_config['prompts'] = [{
+        scenario_variations['prompts'] = [{
             'name': 'default',
             'template': {
                 'filename': args.prompt_filename
             }
         }]
     elif args.prompt:
-        variations_config['prompts'] = [{
+        scenario_variations['prompts'] = [{
             'name': 'default',
             'template': {
                 'content': args.prompt
             }
         }]
 
-    if not variations_config.get('prompts'):
+    if not scenario_variations.get('prompts'):
         print('No prompt defined: pass a prompt, --prompt-filename, or define one in the config file')
         exit(1)
 
@@ -439,7 +439,7 @@ def cli():
 
     # every model of the scenario must be defined in the `models` section of
     # the config
-    model_names = variations_config.get('models')
+    model_names = scenario_variations.get('models')
     models_config = config.get('models') or {}
     models_undefined = [name for name in model_names if name not in models_config]
     if models_undefined:
@@ -453,8 +453,8 @@ def cli():
         # the model name defaults to the key of the `models` section
         model_config.setdefault('name', model_name)
 
-    variations = build_variations(variations_config)
-    print(f'Total Variations: {len(variations)} ({variations_breakdown(variations_config)})')
+    variations = build_variations(scenario_variations)
+    print(f'Total Variations: {len(variations)} ({variations_breakdown(scenario_variations)})')
 
     # the dataset is optional: without it a single synthetic record is used
     dataset_config = scenario.get('dataset')
