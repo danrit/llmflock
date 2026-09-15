@@ -236,7 +236,7 @@ def variation_slug(data_id, label: dict) -> str:
     return '-'.join(parts)
 
 
-def run_variation(data: dict, variation: dict, models: dict):
+def run_variation(data: dict, variation: dict, models: dict, schema: dict | None):
     """Run a single variation for a single dataset record (one LLM call)."""
     data_id = data.get('id')
     label = variation_label(variation)
@@ -311,9 +311,9 @@ def run_variation(data: dict, variation: dict, models: dict):
 
     # the data schema is optional: without it there is nothing to extract and
     # validate, so the raw LLM response is stored instead
-    if config_module.data_schema:
+    if schema:
         extracted_data = extract_validate_json(response['data']['text'],
-                                               config_module.data_schema)
+                                               schema)
         logger.debug('Extracted data: ' + json.dumps(extracted_data))
         record['extraction'] = extracted_data
     else:
@@ -328,11 +328,11 @@ def run_variation(data: dict, variation: dict, models: dict):
     return
 
 
-def run_variations(dataset, variations: list, models: dict):
+def run_variations(dataset, variations: list, models: dict, schema: dict | None):
     """Run every variation of the matrix for every record of the dataset."""
     for data in dataset:
         for variation in variations:
-            run_variation(data, variation, models)
+            run_variation(data, variation, models, schema)
 
     return
 
@@ -434,9 +434,6 @@ def cli():
         print('No prompt defined: pass a prompt, --prompt-filename, or define one in the config file')
         exit(1)
 
-    # data_schema is optional (without it the extraction step is skipped)
-    config_module.data_schema = scenario.get('data_schema')
-
     # every model of the scenario must be defined in the `models` section of
     # the config
     model_names = scenario_variations.get('models')
@@ -470,7 +467,7 @@ def cli():
 
     # Iterate over the dataset and run the variations for each item:
     start = perf_counter()
-    run_variations(dataset, variations, models)
+    run_variations(dataset, variations, models, scenario.get('data_schema'))
 
     duration_ms = (perf_counter() - start) * 1000
 

@@ -4,9 +4,6 @@ Note: using this module as a centralized configuration point, data is modifiable
 """
 log_dir = '.'
 run_dir = '.' # required?
-# Set at runtime from the scenario. When None (no data_schema defined), the
-# extraction step is skipped and the raw LLM response is stored instead.
-data_schema = None
 
 # Base directory for logs/ and runs/ when the tool is used WITHOUT a config file.
 user_dir = '~/.llmrunctl'
