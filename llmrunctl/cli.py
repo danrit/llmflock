@@ -4,6 +4,7 @@ import itertools
 import re
 
 import llmrunctl.config as config_module
+from llmrunctl.simonw_llm_utils import schema_dsl
 import json
 import os
 from datetime import datetime
@@ -40,6 +41,8 @@ parser.add_argument('-m', '--model', default=None,
                     help="Override the models specified in config.yaml (Comma-separated list of model names)")
 parser.add_argument('-r', '--repeats', type=int, default=None,
                     help="Override the number of repeats of each variation")
+parser.add_argument('--schema', default=None,
+                    help="Override the JSON schema")
 args = parser.parse_args()
 
 # Ollama-powered models all accept the Ollama modelfile parameters as options
@@ -433,6 +436,9 @@ def cli():
     if not scenario_variations.get('prompts'):
         print('No prompt defined: pass a prompt, --prompt-filename, or define one in the config file')
         exit(1)
+
+    if args.schema is not None:
+        scenario['data_schema'] = schema_dsl(args.schema)
 
     # every model of the scenario must be defined in the `models` section of
     # the config
