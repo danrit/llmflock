@@ -2,7 +2,7 @@
 
 ## Instruction
 
-{count_question}
+{user_prompt}
 
 ## Formatting the response 
 
