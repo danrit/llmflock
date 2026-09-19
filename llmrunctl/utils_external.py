@@ -4,6 +4,8 @@ Selected utilities functions from simonw/llm
 Based on the original implementation by Simon Willison in simonw/llm,
 licensed under the Apache License 2.0
 Source: https://github.com/simonw/llm/blob/a463c6318f65a48ae185733a0655dca7bb00c3e1/llm/utils.py
+
+updated schema_dsl to add nullability support
 """
 
 from typing import Any
@@ -71,11 +73,28 @@ def schema_dsl(schema_dsl: str, multi: bool = False) -> dict[str, Any]:
                     f"for field {field_name!r}"
                 ) from None
 
+        # Nullability: `column_1 int [NOT NULL | NULL]`. Defaults to NOT NULL.
+        nullable = False
+        if len(field_parts) > 2:
+            nullability_tokens = [part.upper() for part in field_parts[2:]]
+            if nullability_tokens == ["NULL"]:
+                nullable = True
+            elif nullability_tokens == ["NOT", "NULL"]:
+                nullable = False
+            else:
+                raise ValueError(
+                    f"Invalid schema DSL: unknown nullability suffix "
+                    f"{' '.join(field_parts[2:])!r} for field {field_name!r} "
+                    f"(expected NULL or NOT NULL)"
+                )
+
         if field_name in json_schema["properties"]:
             raise ValueError(f"Invalid schema DSL: duplicate field name {field_name!r}")
 
         # Add field to properties
-        json_schema["properties"][field_name] = {"type": field_type}
+        json_schema["properties"][field_name] = {
+            "type": [field_type, "null"] if nullable else field_type
+        }
 
         # Add description if provided
         if description:
