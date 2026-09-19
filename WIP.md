@@ -17,6 +17,7 @@
 - support for yaml anchor/alias - or in other words, simplify the current syntax of `config.yaml` where I have "mandated" to use "manual references" in the `scenario` object. ie that is a simplification.
 - update `meta.json` `scenarios` attribute: with the scenario name and CLI args passed in: during argument parsing / scenario preparation, build the "real-active" scenario (made of selected scenario in config.yaml + overrides with args) and that is the one used to build variations AND stored in meta.json. The intent with that is that meta.json contains everything to re-run the same scenario
 - update the looping: work WITHOUT a `config.yaml` (falling back on `config_default`), every variation parameter optional, and `run_variations` split into `build_variations()` (the matrix) + `run_variations()`/`run_variation()` (running it).
+- add support for CSV dataset
 
 ### in progress
 
@@ -25,25 +26,45 @@
 I want to allow user of popular [llm](https://llm.datasette.io/en/stable/index.html) tool to transition easy to that tool, that mean replicating some of the features, replicating the pattern, ie working WITHOUT config file. (note: To create an optional positional argument in Python using the argparse module, you need to use the nargs='?' parameter. eg: `parser.add_argument("prompt", help="...", nargs="?", default=None)`)
 (...)
 
-### Next item
-
-Support csv format dataset option? `--dataset-filename=data.csv`
-Keep the signature of the function `read_dataset` unchanged. My idea is that the output of that function `dataset` is a good format for that purpose (an array of dictionary). And by remaining unchanged further processing (from `run_variations`) is unaffected. Hence I assume that, for a CSV dataset, the new implementation need to generate the `dataset` array from headers and data of the CSV file.
-Use the [example4](./data/example4-noconfig) to validate the change: it contains 
-- [dataset.csv](./data/example4-noconfig/dataset.csv): a sample data including the mandatory `id` attribute and the example specific `count_question` attribute. 
-- [PROMPT.md](./data/example4-noconfig/PROMPT.md): a related prompt, including usage of the variable `count_question`
-
-For both json and csv format, at the `read_dataset` stage, implement a check for mandatory field `id`.
-
-I want to keep thing simple so I suppose the dataset file format detection will be done simply on the file extension but prompt me if there is another good simple approach is possible.
-
-Prompt me if some of the requirements appears missing, conflicting or for design choice.
-
-
 #### Next - implement schema option
 
-Using LLM’s [concise schema syntax](https://llm.datasette.io/en/stable/schemas.html#schemas-dsl)
-`llm --schema 'name, age int, one_sentence_bio' 'invent a cool dog'`
+The grand idea is to mimic LLM’s [concise schema syntax](https://llm.datasette.io/en/stable/schemas.html#schemas-dsl)
+- `llmrunctl --schema 'name, age int, one_sentence_bio' 'invent a cool dog'`
+- `llmrunctl --schema 'count int' "How many r's in strawberry?"`
+
+With 2 added features:
+
+##### Support for null value
+
+I understand that by default in [JSON Schema](https://json-schema.org/), a property type definition implicitly does not allow nullable fields, yet in the context of data extraction it will be often require to allow the LLM to set NULL. Hence need to add that feature on the current simonw implementation that I have copied into the file `llmrunctl/utils_external.py`.
+
+Continuing on the original implementation that look similar to a SQL column declaration in a `CREATE table` statement, I want the format of the nullable field to look like in a mariadb/sqlite column definition: `column_1 int [NOT NULL | NULL]`
+
+examples:
+- `llmrunctl "What years mark the start and end of Queen Elizabeth II's reign in the United Kingdom?" --schema 'start int, end int'`
+- `llmrunctl "What years mark the start and end of King Charles III's reign in the United Kingdom?" --schema 'start int NULL, end int NULL'` _currently ignored_
+- `llmrunctl --prompt-filename=data/example4-noconfig/PROMPT.dates.md --dataset-filename=data/example4-noconfig/dataset.dates.csv --schema 'start int, end int NULL'`
+
+##### Update user prompt to add schema instruction
+
+I want that the tool automatically append to Prompt text given the instructions to output the response inside a JSON Markdown fenced code block, following the json schema given.
+
+I have already implemented stage 1: support for the `--schema` option to override the `data_schema` attribute. 
+I have prepared the prompt template `prompt_schema_default` in `llmrunctl/config.py`: 
+
+Now I want to create logic to create 2 things, based on the json schema been passed with `--schema` option:
+- build (and replace in the prompt template) `<human_json_schema_rules>` token: the "human explanation of the rule defined in the json schema"
+- build (and replace in the prompt template) `<json_example_1>` and `<json_example_2>`: 2 different example of dummy valid data for the schema.
+
+Note: Json schema is a vast specification and I just want to support a subset of it: what is currently supported by the `--schema` option (defined by function `schema_dsl` in `llmrunctl/simonw_llm_utils.py`)
+
+Note: refer to the prompt file used in the command `llmrunctl --prompt-filename=data/example4-noconfig/PROMPT.md --dataset-filename=data/example4-noconfig/dataset.csv --schema 'count int'` to have example of the epxanded tokens `<human_json_schema_rules>`, `<json_example_1>` and `<json_example_2>`
+
+example:
+- `llmrunctl --prompt-filename=data/example4-noconfig/PROMPT.md --dataset-filename=data/example4-noconfig/dataset.csv --schema 'count int'`
+- `llmrunctl "list the countries sharing a border with USA"`
+- `llmrunctl "list the countries sharing a border with Australia"`
+
 
 ### Next — OpenRouter provider
 - Add `openrouter` backend module (alongside `ollama_ollama.py` and `simonw_llm.py`)
@@ -63,6 +84,7 @@ Using LLM’s [concise schema syntax](https://llm.datasette.io/en/stable/schemas
   - pretty-print output
   - csv output
 - implicitly implement check on whether the variable used in prompt are defined in the dataset
+- make validation more generic: from mandate `data_schema` (ie json_schema) can go for `data_validation`: with currently 2 choice: `json_schema` or `callback`
 
 ### currently studied
 

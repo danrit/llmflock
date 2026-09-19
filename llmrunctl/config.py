@@ -58,3 +58,28 @@ config_default = {
         }
     }
 }
+
+prompt_schema_default = '''
+# LLM Prompt
+
+## Instruction
+
+{user_prompt}
+
+## Formatting the response
+
+Format the answer in the response as JSON Object inside a JSON Markdown fenced code block: <human_json_schema_rules>
+
+### Examples:
+_example 1_:
+
+```json
+<json_example_1>
+```
+
+_example 2_:
+
+```json
+<json_example_2>
+``
+'''
