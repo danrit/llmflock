@@ -4,7 +4,7 @@ import itertools
 import re
 
 import llmrunctl.config as config_module
-from llmrunctl.simonw_llm_utils import schema_dsl
+from llmrunctl.utils_external import schema_dsl
 import json
 import os
 from datetime import datetime

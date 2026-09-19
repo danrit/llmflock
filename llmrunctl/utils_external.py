@@ -1,7 +1,8 @@
 """
 Selected utilities functions from simonw/llm
 
-Based on the original implementation by Simon Willison in simonw/llm
+Based on the original implementation by Simon Willison in simonw/llm,
+licensed under the Apache License 2.0
 Source: https://github.com/simonw/llm/blob/a463c6318f65a48ae185733a0655dca7bb00c3e1/llm/utils.py
 """
 
