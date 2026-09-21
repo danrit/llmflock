@@ -8,8 +8,8 @@
 
 Format the answer in the response as JSON Object inside a JSON Markdown fenced code block: use the keys
 
-- `start` and assign it the answer as a data type `Number`
-- `end` and assign it the answer as a data type `Number`
+- `start` and assign it the answer as a data type `Number` or a null value
+- `end` and assign it the answer as a data type `Number` or a null value
 
 ### Examples:
 
@@ -26,7 +26,7 @@ _example 2_:
 
 ```json
 {{
-  "start": 56,
-  "end": -6979
+  "start": 142,
+  "end": null
 }}
 ```

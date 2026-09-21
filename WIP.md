@@ -18,6 +18,7 @@
 - update `meta.json` `scenarios` attribute: with the scenario name and CLI args passed in: during argument parsing / scenario preparation, build the "real-active" scenario (made of selected scenario in config.yaml + overrides with args) and that is the one used to build variations AND stored in meta.json. The intent with that is that meta.json contains everything to re-run the same scenario
 - update the looping: work WITHOUT a `config.yaml` (falling back on `config_default`), every variation parameter optional, and `run_variations` split into `build_variations()` (the matrix) + `run_variations()`/`run_variation()` (running it).
 - add support for CSV dataset
+- add support for `--schema` option
 
 ### in progress
 
@@ -58,12 +59,9 @@ Now I want to create logic to create 2 things, based on the json schema been pas
 
 Note: Json schema is a vast specification and I just want to support a subset of it: what is currently supported by the `--schema` option (defined by function `schema_dsl` in `llmrunctl/simonw_llm_utils.py`)
 
-Note: refer to the prompt file used in the command `llmrunctl --prompt-filename=data/example4-noconfig/PROMPT.md --dataset-filename=data/example4-noconfig/dataset.csv --schema 'count int'` to have example of the epxanded tokens `<human_json_schema_rules>`, `<json_example_1>` and `<json_example_2>`
-
-example:
+Note: refer to the prompt files used in the following commands to have example of the expanded tokens `<human_json_schema_rules>`, `<json_example_1>` and `<json_example_2>`:
 - `llmrunctl --prompt-filename=data/example4-noconfig/PROMPT.md --dataset-filename=data/example4-noconfig/dataset.csv --schema 'count int'`
-- `llmrunctl "list the countries sharing a border with USA"`
-- `llmrunctl "list the countries sharing a border with Australia"`
+- `llmrunctl --prompt-filename=data/example4-noconfig/PROMPT.dates.md --dataset-filename=data/example4-noconfig/dataset.dates.csv --schema 'start int, end int NULL'`
 
 
 ### Next — OpenRouter provider
@@ -79,12 +77,14 @@ example:
 - export `output.jsonl` to spreadsheet
 - add a sort of hash of experiment condition so future `llmrunviewer` can target only similar/relevant runs to compare.
 - with the tool available as a python package in pypi.org, need a way to make the 3 examples easily available to package user
-- make a default naming for models provided by on backend (example if ollama backend is available, all the local models of that bakend should be available with the `--models=modela,modelb` option.) ie moving `config_module.model_default` to `ollama` backend source
+- make a default naming for models provided by on backend (example if ollama backend is available, all the local models of that backend should be available with the `--models=modela,modelb` option.) ie moving `config_module.model_default` to `ollama` backend source
 - do a output format option `-o`, default to json
   - pretty-print output
   - csv output
 - implicitly implement check on whether the variable used in prompt are defined in the dataset
 - make validation more generic: from mandate `data_schema` (ie json_schema) can go for `data_validation`: with currently 2 choice: `json_schema` or `callback`
+- add multi in schema feature like in `llm` tool to support prompt like: `llmrunctl "list the countries sharing a border with USA"` ; `llmrunctl "list the countries sharing a border with Australia"`
+
 
 ### currently studied
 
