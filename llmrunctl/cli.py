@@ -43,6 +43,8 @@ parser.add_argument('-r', '--repeats', type=int, default=None,
                     help="Override the number of repeats of each variation")
 parser.add_argument('--schema', default=None,
                     help="Override the JSON schema")
+parser.add_argument('--schema-multi', default=None,
+                    help="Override the JSON schema")
 args = parser.parse_args()
 
 # Ollama-powered models all accept the Ollama modelfile parameters as options
@@ -439,6 +441,8 @@ def cli():
 
     if args.schema is not None:
         scenario['data_schema'] = schema_dsl(args.schema)
+    if args.schema_multi is not None:
+        scenario['data_schema'] = schema_dsl(args.schema_multi, True)
 
     # every model of the scenario must be defined in the `models` section of
     # the config
