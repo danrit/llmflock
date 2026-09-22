@@ -48,20 +48,30 @@ examples:
 
 ##### Update user prompt to add schema instruction
 
-I want that the tool automatically append to Prompt text given the instructions to output the response inside a JSON Markdown fenced code block, following the json schema given.
+When a schema has been provided by arguments (via `--schema` or `--schema-multi`) I want that the tool automatically append to the prompt text given the instructions to output the response inside a JSON Markdown fenced code block, following the json schema given. That is stage 2.
 
 I have already implemented stage 1: support for the `--schema` option to override the `data_schema` attribute. 
 I have prepared the prompt template `prompt_schema_default` in `llmrunctl/config.py`: 
 
 Now I want to create logic to create 2 things, based on the json schema been passed with `--schema` option:
 - build (and replace in the prompt template) `<human_json_schema_rules>` token: the "human explanation of the rule defined in the json schema"
-- build (and replace in the prompt template) `<json_example_1>` and `<json_example_2>`: 2 different example of dummy valid data for the schema.
+- build (and replace in the prompt template) `<json_example_1>`, `<json_example_2>` and `<json_example_3>`: 2 different example of dummy valid data for the schema.
 
-Note: Json schema is a vast specification and I just want to support a subset of it: what is currently supported by the `--schema` option (defined by function `schema_dsl` in `llmrunctl/simonw_llm_utils.py`)
+Json schema is a vast specification and I just want to support a subset of it: what is currently supported by the `--schema` and `--schema-multi` option (defined by function `schema_dsl` in `llmrunctl/simonw_llm_utils.py`)
 
-Note: refer to the prompt files used in the following commands to have example of the expanded tokens `<human_json_schema_rules>`, `<json_example_1>` and `<json_example_2>`:
+Technical requirements:
+- for the example the generation should be deterministic (ie not random): two run of the same command should generate the same example file. There are 4 supported types: `bool`, `int`, `float` and `str`. Example values should be taken from the values from the respective variables `bools`, `ints`, `floats` and `strs` defined in `llmrunctl/concise_schema/lookup_tables.py`. For string generation, it should combined one element from `strs.left` and one element from `strs.right` separated by a space.
+- Here is the main steps It need to follow:
+  1. After `schema_dsl()` is called on the schema arguments, use the output to generate a hash (used later for deterministic generation of the examples data)
+  2. Generate `<human_json_schema_rules>` token: iterate trough the schema definition and generate bullet points instruction, attributes by attributes of the requested response format. See examples below. Adjustment in the wording can be made to output better plain english or cater more cases.
+  3. Generate `<json_example_1>`, `<json_example_2>` and `<json_example_3>` tokens: for each examples, iterate trough the schema definition and generate different but deterministic json examples using the hash produced above. And run json validation on each one, throw exception if it fails.
+- Add the logic for that feature in a new dedicated file in `llmrunctl/concise_schema` folder, import and call it from `cli.py`
+
+Note: refer to the prompt files used in the following commands to have example of the expanded tokens `<human_json_schema_rules>`, `<json_example_1>`, `<json_example_2>` and `<json_example_3>`:
 - `llmrunctl --prompt-filename=data/example4-noconfig/PROMPT.md --dataset-filename=data/example4-noconfig/dataset.csv --schema 'count int'`
 - `llmrunctl --prompt-filename=data/example4-noconfig/PROMPT.dates.md --dataset-filename=data/example4-noconfig/dataset.dates.csv --schema 'start int, end int NULL'`
+
+Note: this behavior (Update user prompt to add schema instruction) should be triggered only when schema AND prompt are been provided by arguments. (ie if not, it is assume that the user want control of the exact prompt instructions through a custom prompt file, hence no automatic add of instructions.)
 
 
 ### Next — OpenRouter provider
