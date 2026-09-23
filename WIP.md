@@ -18,7 +18,7 @@
 - update `meta.json` `scenarios` attribute: with the scenario name and CLI args passed in: during argument parsing / scenario preparation, build the "real-active" scenario (made of selected scenario in config.yaml + overrides with args) and that is the one used to build variations AND stored in meta.json. The intent with that is that meta.json contains everything to re-run the same scenario
 - update the looping: work WITHOUT a `config.yaml` (falling back on `config_default`), every variation parameter optional, and `run_variations` split into `build_variations()` (the matrix) + `run_variations()`/`run_variation()` (running it).
 - add support for CSV dataset
-- add support for `--schema` option
+- add support for `--schema` option (including automatically appending schema-related instructions to the prompt)
 
 ### in progress
 
@@ -26,55 +26,6 @@
 
 I want to allow user of popular [llm](https://llm.datasette.io/en/stable/index.html) tool to transition easy to that tool, that mean replicating some of the features, replicating the pattern, ie working WITHOUT config file. (note: To create an optional positional argument in Python using the argparse module, you need to use the nargs='?' parameter. eg: `parser.add_argument("prompt", help="...", nargs="?", default=None)`)
 (...)
-
-#### Next - implement schema option
-
-The grand idea is to mimic LLM’s [concise schema syntax](https://llm.datasette.io/en/stable/schemas.html#schemas-dsl)
-- `llmrunctl --schema 'name, age int, one_sentence_bio' 'invent a cool dog'`
-- `llmrunctl --schema 'count int' "How many r's in strawberry?"`
-
-With 2 added features:
-
-##### Support for null value
-
-I understand that by default in [JSON Schema](https://json-schema.org/), a property type definition implicitly does not allow nullable fields, yet in the context of data extraction it will be often require to allow the LLM to set NULL. Hence need to add that feature on the current simonw implementation that I have copied into the file `llmrunctl/utils_external.py`.
-
-Continuing on the original implementation that look similar to a SQL column declaration in a `CREATE table` statement, I want the format of the nullable field to look like in a mariadb/sqlite column definition: `column_1 int [NOT NULL | NULL]`
-
-examples:
-- `llmrunctl "What years mark the start and end of Queen Elizabeth II's reign in the United Kingdom?" --schema 'start int, end int'`
-- `llmrunctl "What years mark the start and end of King Charles III's reign in the United Kingdom?" --schema 'start int NULL, end int NULL'` _currently ignored_
-- `llmrunctl --prompt-filename=data/example4-noconfig/PROMPT.dates.md --dataset-filename=data/example4-noconfig/dataset.dates.csv --schema 'start int, end int NULL'`
-
-##### Update user prompt to add schema instruction
-
-When a schema has been provided by arguments (via `--schema` or `--schema-multi`) I want that the tool automatically append to the prompt text given the instructions to output the response inside a JSON Markdown fenced code block, following the json schema given. That is stage 2.
-
-I have already implemented stage 1: support for the `--schema` option to override the `data_schema` attribute. 
-I have prepared the prompt template `prompt_schema_default` in `llmrunctl/config.py`: 
-
-Now I want to create logic to create 2 things, based on the json schema been passed with `--schema` option:
-- build (and replace in the prompt template) `<human_json_schema_rules>` token: the "human explanation of the rule defined in the json schema"
-- build (and replace in the prompt template) `<json_example_1>`, `<json_example_2>` and `<json_example_3>` tokens: 3 different example of dummy valid data for the schema.
-
-Json schema is a vast specification and I just want to support a subset of it: what is currently supported by the `--schema` and `--schema-multi` option (defined by function `schema_dsl` in `llmrunctl/concise_schema/utils_external.py`)
-
-Technical requirements:
-- for the example the generation should be deterministic (ie not random): two run of the same command should generate the same example file. There are 4 supported types: `bool`, `int`, `float` and `str`. Example values should be taken from the values from the respective variables `bools`, `ints`, `floats` and `strs` defined in `llmrunctl/concise_schema/lookup_tables.py`. For string generation, it should combine one element from `strs.left` and one element from `strs.right` separated by a space.
-- when using the option `--schema-multi` the produced json schema contains a 5th supported type `Array`, wrapping the schema defined by the argument value. The generation logic of the tokens should support that. Eg: `llmrunctl "list the countries sharing a border with USA" --schema-multi 'name str'`
-- Here is the main steps It needs to follow:
-  1. After `schema_dsl()` is called on the schema arguments, use the output to generate a hash (used later for deterministic generation of the examples data)
-  2. Generate `<human_json_schema_rules>` token: iterate trough the schema definition and generate bullet points instruction, attributes by attributes of the requested response format. See examples below. Adjustment in the wording can be made to output better plain english or cater more cases.
-  3. Generate `<json_example_1>`, `<json_example_2>` and `<json_example_3>` tokens: for each examples, iterate trough the schema definition and generate different but deterministic json examples using the hash produced above. And run json validation on each one, throw exception if it fails.
-- Add the logic for that feature in a new dedicated file in `llmrunctl/concise_schema` folder, import and call it from `cli.py`
-
-Note: refer to the prompt files used in the following commands to have example of the expanded tokens `<human_json_schema_rules>`, `<json_example_1>`, `<json_example_2>` and `<json_example_3>`:
-- `llmrunctl --prompt-filename=data/example4-noconfig/PROMPT.md --dataset-filename=data/example4-noconfig/dataset.csv --schema 'count int'`
-- `llmrunctl --prompt-filename=data/example4-noconfig/PROMPT.dates.md --dataset-filename=data/example4-noconfig/dataset.dates.csv --schema 'start int, end int NULL'`
-- examples for a schema-multi: `llmrunctl --prompt-filename=data/example4-noconfig/PROMPT.borders.md --dataset-filename=data/example4-noconfig/dataset.borders.csv --schema-multi 'name str'`
-
-Note: This behavior (Update user prompt to add schema instruction) should be triggered only when schema AND prompt are been provided by arguments. (If the schema is provided by config file it may contain constraints that are not supported by this instructions and example generation logic. If the prompt is provided by filename, it is assumed that the user want control of the exact prompt instructions. Hence no automatic adding of instructions.)
-
 
 ### Next — OpenRouter provider
 - Add `openrouter` backend module (alongside `ollama_ollama.py` and `simonw_llm.py`)

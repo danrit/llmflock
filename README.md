@@ -33,11 +33,16 @@ To run the example in `data/example1-ev`, use the command: `llmr --configfile=da
 
 ### Examples
 
-- submitting a prompt: `llm "extract Company and Location entities in JSON format from the following text: 'EU clears merger of Essilor , Luxottica without conditions'"`
-- switch from the default model: `llm "extract Company and Location entities in JSON format from the following text: 'EU clears merger of Essilor , Luxottica without conditions'" -m gpt-oss` (note: the model need to be defined in the default config)
-- specify repeat count: `llm "extract Company and Location entities in JSON format from the following text: 'EU clears merger of Essilor , Luxottica without conditions'" -r 3`
+- submitting a prompt: `llmrunctl "extract Company and Location entities in JSON format from the following text: 'EU clears merger of Essilor , Luxottica without conditions'"`
+- switch from the default model: `llmrunctl "extract Company and Location entities in JSON format from the following text: 'EU clears merger of Essilor , Luxottica without conditions'" -m gpt-oss` (note: the model need to be defined in the default config)
+- specify repeat count: `llmrunctl "extract Company and Location entities in JSON format from the following text: 'EU clears merger of Essilor , Luxottica without conditions'" -r 3`
+- specify a CSV dataset: `llmrunctl --prompt-filename=data/example4-noconfig/PROMPT.md --dataset-filename=data/example4-noconfig/dataset.csv`
+- specify a schema: `llmrunctl --prompt-filename=data/example4-noconfig/PROMPT.dates.md --dataset-filename=data/example4-noconfig/dataset.dates.csv --schema 'start int NULL, end int NULL'`
+  - `llmrunctl "What years mark the start and end of Queen Elizabeth II's reign in the United Kingdom?" --schema 'start int, end int'`
+  - `llmrunctl "What years mark the start and end of King Charles III's reign in the United Kingdom?" --schema 'start int NULL, end int NULL'`
+- specify a multi-schema: `llmrunctl --prompt-filename=data/example4-noconfig/PROMPT.borders.md --dataset-filename=data/example4-noconfig/dataset.borders.csv --schema-multi 'name str'`
 
-There are also currently 3 working examples based on provided config file (and associated data):
+- There are also currently 3 working examples based on provided config file (and associated data):
 - `llmrunctl --configfile=data/example1-ev/config.yaml`
 - `llmrunctl --configfile=data/example2-img-transform/config.yaml`
 - `llmrunctl --configfile=data/example3-finance/config.yaml`
