@@ -109,11 +109,10 @@ def schema_dsl(schema_dsl: str, multi: bool = False) -> dict[str, Any]:
         return json_schema
 
 def multi_schema(schema: dict) -> dict:
-    "Wrap JSON schema in an 'items': [] array"
+    "Wrap JSON schema in array"
     return {
-        "type": "object",
-        "properties": {"items": {"type": "array", "items": schema}},
-        "required": ["items"],
+        "type": "array",
+        "items": schema,
     }
 
 
