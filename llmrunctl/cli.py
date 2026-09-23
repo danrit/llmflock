@@ -5,6 +5,7 @@ import re
 
 import llmrunctl.config as config_module
 from llmrunctl.concise_schema.utils_external import schema_dsl
+from llmrunctl.concise_schema.prompt_instructions import build_schema_prompt
 import json
 import os
 from datetime import datetime
@@ -418,6 +419,12 @@ def cli():
     if args.repeats is not None:
         scenario_variations['repeats'] = args.repeats
 
+    schema_from_args = args.schema is not None or args.schema_multi is not None
+    if args.schema is not None:
+        scenario['data_schema'] = schema_dsl(args.schema)
+    if args.schema_multi is not None:
+        scenario['data_schema'] = schema_dsl(args.schema_multi, True)
+
     # a prompt passed on the command line (text or file) replaces the whole set
     # of variations['prompts']
     if args.prompt_filename:
@@ -428,21 +435,21 @@ def cli():
             }
         }]
     elif args.prompt:
+        prompt_content = args.prompt
+        if schema_from_args:
+            prompt_content = build_schema_prompt(
+                args.prompt, scenario['data_schema'],
+                config_module.prompt_schema_default)
         scenario_variations['prompts'] = [{
             'name': 'default',
             'template': {
-                'content': args.prompt
+                'content': prompt_content
             }
         }]
 
     if not scenario_variations.get('prompts'):
         print('No prompt defined: pass a prompt, --prompt-filename, or define one in the config file')
         exit(1)
-
-    if args.schema is not None:
-        scenario['data_schema'] = schema_dsl(args.schema)
-    if args.schema_multi is not None:
-        scenario['data_schema'] = schema_dsl(args.schema_multi, True)
 
     # every model of the scenario must be defined in the `models` section of
     # the config
