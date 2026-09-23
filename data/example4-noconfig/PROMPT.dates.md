@@ -6,10 +6,10 @@
 
 ## Formatting the response 
 
-Format the answer in the response as JSON Object inside a JSON Markdown fenced code block: use the keys
+Format the answer in the response in JSON inside a JSON Markdown fenced code block: an Object having the key(s):
 
-- `start` and assign it the answer as a data type `Number` or a null value
-- `end` and assign it the answer as a data type `Number` or a null value
+- `start` and assign it the related answer as a data type `Number` or a null value
+- `end` and assign it the related answer as a data type `Number` or a null value
 
 ### Examples:
 

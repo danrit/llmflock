@@ -71,6 +71,7 @@ Technical requirements:
 Note: refer to the prompt files used in the following commands to have example of the expanded tokens `<human_json_schema_rules>`, `<json_example_1>`, `<json_example_2>` and `<json_example_3>`:
 - `llmrunctl --prompt-filename=data/example4-noconfig/PROMPT.md --dataset-filename=data/example4-noconfig/dataset.csv --schema 'count int'`
 - `llmrunctl --prompt-filename=data/example4-noconfig/PROMPT.dates.md --dataset-filename=data/example4-noconfig/dataset.dates.csv --schema 'start int, end int NULL'`
+- examples for a schema-multi: `llmrunctl --prompt-filename=data/example4-noconfig/PROMPT.borders.md --dataset-filename=data/example4-noconfig/dataset.borders.csv --schema-multi 'name str'`
 
 Note: this behavior (Update user prompt to add schema instruction) should be triggered only when schema AND prompt are been provided by arguments. (ie if not, it is assume that the user want control of the exact prompt instructions through a custom prompt file, hence no automatic add of instructions.)
 
