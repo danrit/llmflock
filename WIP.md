@@ -73,7 +73,7 @@ Note: refer to the prompt files used in the following commands to have example o
 - `llmrunctl --prompt-filename=data/example4-noconfig/PROMPT.dates.md --dataset-filename=data/example4-noconfig/dataset.dates.csv --schema 'start int, end int NULL'`
 - examples for a schema-multi: `llmrunctl --prompt-filename=data/example4-noconfig/PROMPT.borders.md --dataset-filename=data/example4-noconfig/dataset.borders.csv --schema-multi 'name str'`
 
-Note: this behavior (Update user prompt to add schema instruction) should be triggered only when schema AND prompt are been provided by arguments. (ie if not, it is assume that the user want control of the exact prompt instructions through a custom prompt file, hence no automatic add of instructions.)
+Note: This behavior (Update user prompt to add schema instruction) should be triggered only when schema AND prompt are been provided by arguments. (If the schema is provided by config file it may contain constraints that are not supported by this instructions and example generation logic. If the prompt is provided by filename, it is assumed that the user want control of the exact prompt instructions. Hence no automatic adding of instructions.)
 
 
 ### Next — OpenRouter provider
