@@ -57,7 +57,7 @@ Now I want to create logic to create 2 things, based on the json schema been pas
 - build (and replace in the prompt template) `<human_json_schema_rules>` token: the "human explanation of the rule defined in the json schema"
 - build (and replace in the prompt template) `<json_example_1>`, `<json_example_2>` and `<json_example_3>` tokens: 3 different example of dummy valid data for the schema.
 
-Json schema is a vast specification and I just want to support a subset of it: what is currently supported by the `--schema` and `--schema-multi` option (defined by function `schema_dsl` in `llmrunctl/simonw_llm_utils.py`)
+Json schema is a vast specification and I just want to support a subset of it: what is currently supported by the `--schema` and `--schema-multi` option (defined by function `schema_dsl` in `llmrunctl/concise_schema/utils_external.py`)
 
 Technical requirements:
 - for the example the generation should be deterministic (ie not random): two run of the same command should generate the same example file. There are 4 supported types: `bool`, `int`, `float` and `str`. Example values should be taken from the values from the respective variables `bools`, `ints`, `floats` and `strs` defined in `llmrunctl/concise_schema/lookup_tables.py`. For string generation, it should combine one element from `strs.left` and one element from `strs.right` separated by a space.
