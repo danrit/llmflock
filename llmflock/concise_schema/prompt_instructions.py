@@ -15,7 +15,7 @@ from typing import Any
 
 from jsonschema import validate
 
-from llmrunctl.concise_schema.lookup_tables import bools, ints, floats, strs
+from llmflock.concise_schema.lookup_tables import bools, ints, floats, strs
 
 TYPE_WORDS = {
     'boolean': 'Boolean',

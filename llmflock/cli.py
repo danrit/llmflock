@@ -3,9 +3,9 @@ import csv
 import itertools
 import re
 
-import llmrunctl.config as config_module
-from llmrunctl.concise_schema.utils_external import schema_dsl
-from llmrunctl.concise_schema.prompt_instructions import build_schema_prompt
+import llmflock.config as config_module
+from llmflock.concise_schema.utils_external import schema_dsl
+from llmflock.concise_schema.prompt_instructions import build_schema_prompt
 import json
 import os
 from datetime import datetime
@@ -18,8 +18,8 @@ from jsonschema import validate, ValidationError
 
 import logging
 import yaml
-from llmrunctl.ollama_ollama import ollama_ollama_call
-from llmrunctl.simonw_llm import simonw_llm_call
+from llmflock.ollama_ollama import ollama_ollama_call
+from llmflock.simonw_llm import simonw_llm_call
 
 logger = logging.getLogger(__name__)
 

@@ -26,6 +26,15 @@ model_default = {
 # missing here: it is injected from the command line by `cli()`.
 config_default = {
     'models': {
+        'gpt-oss': {
+            'backend': 'ollama_ollama',
+            'name': 'gpt-oss',
+            'options': {
+                'temperature': 'temperature',
+                'max_predict_tokens': 'num_predict',
+                'top_p': 'top_p',
+            }
+        },
         'gemma3': {
             'backend': 'ollama_ollama',
             'name': 'gemma3',

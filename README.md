@@ -1,6 +1,6 @@
-# LLM Runner Control
+# LLM Flock
 
-A CLI tool to interact with local and remote LLM, define multiple scenario variations (model × prompt × options), run it over a dataset and capture structured results for comparison or to build knowledge through meta analysis.
+A CLI tool to interact with local and remote LLM, define multiple scenario variations (model × prompt × options), run them over a dataset and capture structured results for comparison or to build knowledge through meta analysis.
 
 DRAFT: more on the objective of this tool: it is built to run extraction the same structured data (`data_schemas.default`) in a list (`datasets.default`) of documents (`document_sets.default`) usings LLM and output tabular data. It is designed to run the extraction several times - or variations - (`scenarios.default.variations`) with different models, prompts or model options (temperature, top_p). It also designed to repeat one variation several times (reference to non-deterministic behaviour of LLMs...) (`scenarios.default.variations.repeat`).
 
@@ -15,7 +15,7 @@ Note 3: how to we rate and compare (benchmark) the resulting output structured d
 
 Note 4: more thought one the viewing result part: need to have a tool to aggregate results, adding comparison with one selected IDEAL run and output all of it in a easy spreadsheet format (csv, excel) for further analysis and visualization. by design, the tool will produce was amount of llm-generated data (over dataset and multiple variation) and exact match is illusionist / unrealistic goal. While study of individual result is still valuable to understand, an essential metric is CONVERGENCE, not EQUALITY when comparing generated data.
 
-Hence that tool `llmrunctl` aim to keep it to minimum, focusing on the run+extract part.
+Hence that tool `llmflock` aim to keep it to minimum, focusing on the run+extract part.
 
 
 **On where it sits in the ecosystem of LLM tools:** It is a LLM gateway: meaning it can call different LLM providers (local inference framework or cloud-hosted) with a rudimentary plugin system. If the project matures enough it could be beneficial the transition to a more established LLM gateway tool (like liteLLm, anyLLM).
@@ -33,16 +33,20 @@ To run the example in `data/example1-ev`, use the command: `llmr --configfile=da
 
 ### Examples
 
-- submitting a prompt: `llmrunctl "extract Company and Location entities in JSON format from the following text: 'EU clears merger of Essilor , Luxottica without conditions'"`
-- switch from the default model: `llmrunctl "extract Company and Location entities in JSON format from the following text: 'EU clears merger of Essilor , Luxottica without conditions'" -m gpt-oss` (note: the model need to be defined in the default config)
-- specify repeat count: `llmrunctl "extract Company and Location entities in JSON format from the following text: 'EU clears merger of Essilor , Luxottica without conditions'" -r 3`
-- specify a CSV dataset: `llmrunctl --prompt-filename=data/example4-noconfig/PROMPT.md --dataset-filename=data/example4-noconfig/dataset.csv`
-- specify a schema: `llmrunctl --prompt-filename=data/example4-noconfig/PROMPT.dates.md --dataset-filename=data/example4-noconfig/dataset.dates.csv --schema 'start int NULL, end int NULL'`
-  - `llmrunctl "What years mark the start and end of Queen Elizabeth II's reign in the United Kingdom?" --schema 'start int, end int'`
-  - `llmrunctl "What years mark the start and end of King Charles III's reign in the United Kingdom?" --schema 'start int NULL, end int NULL'`
-- specify a multi-schema: `llmrunctl --prompt-filename=data/example4-noconfig/PROMPT.borders.md --dataset-filename=data/example4-noconfig/dataset.borders.csv --schema-multi 'name str'`
+- submitting a prompt: `llmflock "extract Company and Location entities in JSON format from the following text: 'EU clears merger of Essilor , Luxottica without conditions'"`
+- switch from the default model: `llmflock "extract Company and Location entities in JSON format from the following text: 'EU clears merger of Essilor , Luxottica without conditions'" -m gpt-oss` (note: the model need to be defined in the default config)
+- specify repeat count: `llmflock "extract Company and Location entities in JSON format from the following text: 'EU clears merger of Essilor , Luxottica without conditions'" -r 3`
+- specify a CSV dataset: `llmflock --prompt-filename=data/example4-noconfig/PROMPT.md --dataset-filename=data/example4-noconfig/dataset.csv`
+- specify a schema: `llmflock --prompt-filename=data/example4-noconfig/PROMPT.dates.md --dataset-filename=data/example4-noconfig/dataset.dates.csv --schema 'start int NULL, end int NULL'`
+  - `llmflock "What years mark the start and end of Queen Elizabeth II's reign in the United Kingdom?" --schema 'start int, end int'`
+  - `llmflock "What years mark the start and end of King Charles III's reign in the United Kingdom?" --schema 'start int NULL, end int NULL'`
+- specify a multi-schema: `llmflock --prompt-filename=data/example4-noconfig/PROMPT.borders.md --dataset-filename=data/example4-noconfig/dataset.borders.csv --schema-multi 'name str'`
 
 - There are also currently 3 working examples based on provided config file (and associated data):
-- `llmrunctl --configfile=data/example1-ev/config.yaml`
-- `llmrunctl --configfile=data/example2-img-transform/config.yaml`
-- `llmrunctl --configfile=data/example3-finance/config.yaml`
+- `llmflock --configfile=data/example1-ev/config.yaml`
+- `llmflock --configfile=data/example2-img-transform/config.yaml`
+- `llmflock --configfile=data/example3-finance/config.yaml`
+
+## Origin of the name
+
+The namespace in Python Package Index pypi.org is busy and one rarely get the first choice those days! Ending up with `llmflock` as a short, memorisable name, to amuse rather than impress LLM users. I wanted also to highlight the non-deterministic and "black-box" nature of those models, yet they have very interesting behavior statistically. The behavior of one individual is hard to predict, but the knowledge of the behavior of a large group is a reachable and provide value.
