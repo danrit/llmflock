@@ -47,7 +47,12 @@ I want to allow user of popular [llm](https://llm.datasette.io/en/stable/index.h
 - implicitly implement check on whether the variable used in prompt are defined in the dataset
 - make validation more generic: from mandate `data_schema` (ie json_schema) can go for `data_validation`: with currently 2 choice: `json_schema` or `callback`
 - add multi in schema feature like in `llm` tool to support prompt like: `llmrunctl "list the countries sharing a border with USA"` ; `llmrunctl "list the countries sharing a border with Australia"`
-
+- add feature to sort of export `meta.json` into a `config.yaml` to be able to re-run and add extra rules to a scenario easily
+- wrap the current default "inference/run-llm" commands into an explicit command `infer` or `run` (with the renaming of the tool from `llmrunctl` to `llmflock` this is a necessity. At the same time there is now a place for all the other area of commands: `viewer`, `config` etc...) - possible with the usage of library click https://click.palletsprojects.com/en/stable/
+- add feature to download the examples from the github repo (for those using the pypi.org package)
+- support for "quick" usage of a dataset file, ie without config file. I think it should imply that, IF that should be compatible with the "quick" `--schema` option, the dataset should define specifically the attribute `user_prompt` because `prompt_schema_default` is expecting it (and it should contains `id` because that is mandatory in any dataset i believe). I bump into that missing feature when I wanted to add another typical example:
+    - passing a dataset: create the file `dataset.csv` with the content below (...) and run: `llmflock --dataset-filename=data/example4-noconfig/dataset.csv --schema 'count int' --model=gemma3,gpt-oss`
+- add options to pass model-options (--temperature, --top-p)
 
 ### currently studied
 
