@@ -387,13 +387,13 @@ def cli():
     os.makedirs(config_module.run_dir, exist_ok=True)
 
     # Configure logger for all (this package + dependencies).
-    logging.basicConfig(filename=os.path.join(config_module.log_dir, 'llmrunctl.log'), encoding='utf-8',
+    logging.basicConfig(filename=os.path.join(config_module.log_dir, 'llmflock.log'), encoding='utf-8',
                         level=logging.INFO,
                         format='%(asctime)s - %(levelname)s - %(message)s',
                         datefmt='%Y-%m-%d %H:%M:%S')
     # Override this package's logger for level
     if args.debug:
-        logging.getLogger('llmrunctl').setLevel(logging.DEBUG)
+        logging.getLogger('llmflock').setLevel(logging.DEBUG)
 
     logger.info('Run started')
 

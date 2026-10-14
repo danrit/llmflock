@@ -6,11 +6,11 @@ log_dir = '.'
 run_dir = '.' # required?
 
 # Base directory for logs/ and runs/ when the tool is used WITHOUT a config file.
-user_dir = '~/.llmrunctl'
+user_dir = '~/.llmflock'
 
 # Fallback model definition, used to synthesize a model configuration for a
 # model name that is not declared in the `models` section of the config
-# (typically `llmrunctl "<prompt>" -m <model>` without a config file).
+# (typically `llmflock "<prompt>" -m <model>` without a config file).
 model_default = {
     'backend': 'ollama_ollama',
     'name': 'gemma3',
