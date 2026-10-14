@@ -23,30 +23,33 @@ from llmflock.simonw_llm import simonw_llm_call
 
 logger = logging.getLogger(__name__)
 
-parser = argparse.ArgumentParser(
-    description="Run multiple LLM scenarios over dataset.")
-parser.add_argument('prompt', nargs='?', default=None,
-                    help="Prompt text to submit (mandatory when no --configfile is given)")
-parser.add_argument('-d', '--debug', action='store_true', default=False,
-                    help="keep LLM prompts, responses, execution time (+...)")
-parser.add_argument('--dry-run', action='store_true', default=False,)
-parser.add_argument('-c', '--configfile', default=None,
-                    help="Specify the configuration file to use (without it, the built-in default config is used)")
-parser.add_argument('--scenario', default='default',
-                    help="Specify the scenario to run (see config.yaml)")
-parser.add_argument('--dataset-filename', default=None,
-                    help="Override the dataset file specified in config.yaml")
-parser.add_argument('--prompt-filename', default=None,
-                    help="Override the prompt template file specified in config.yaml")
-parser.add_argument('-m', '--model', default=None,
-                    help="Override the models specified in config.yaml (Comma-separated list of model names)")
-parser.add_argument('-r', '--repeats', type=int, default=None,
-                    help="Override the number of repeats of each variation")
-parser.add_argument('--schema', default=None,
-                    help="Override the JSON schema")
-parser.add_argument('--schema-multi', default=None,
-                    help="Override the JSON schema")
-args = parser.parse_args()
+def build_parser() -> argparse.ArgumentParser:
+    """Command line definition."""
+    parser = argparse.ArgumentParser(
+        description="Run multiple LLM scenarios over dataset.")
+    parser.add_argument('prompt', nargs='?', default=None,
+                        help="Prompt text to submit (mandatory when no --configfile is given)")
+    parser.add_argument('-d', '--debug', action='store_true', default=False,
+                        help="keep LLM prompts, responses, execution time (+...)")
+    parser.add_argument('--dry-run', action='store_true', default=False,)
+    parser.add_argument('-c', '--configfile', default=None,
+                        help="Specify the configuration file to use (without it, the built-in default config is used)")
+    parser.add_argument('--scenario', default='default',
+                        help="Specify the scenario to run (see config.yaml)")
+    parser.add_argument('--dataset-filename', default=None,
+                        help="Override the dataset file specified in config.yaml")
+    parser.add_argument('--prompt-filename', default=None,
+                        help="Override the prompt template file specified in config.yaml")
+    parser.add_argument('-m', '--model', default=None,
+                        help="Override the models specified in config.yaml (Comma-separated list of model names)")
+    parser.add_argument('-r', '--repeats', type=int, default=None,
+                        help="Override the number of repeats of each variation")
+    parser.add_argument('--schema', default=None,
+                        help="Override the JSON schema")
+    parser.add_argument('--schema-multi', default=None,
+                        help="Override the JSON schema")
+    return parser
+
 
 # Ollama-powered models all accept the Ollama modelfile parameters as options
 # see: https://github.com/ollama/ollama/blob/main/docs/modelfile.md#parameter
@@ -59,8 +62,8 @@ MAX_PREDICT_TOKENS = 8192
 
 
 def logger_debug_file(content, filename, directory=None):
-    """Write debug text to a file in the specified directory."""
-    if args.debug:
+    """Write debug text to a file in the specified directory"""
+    if logger.isEnabledFor(logging.DEBUG):
         if directory is None:
             directory = config_module.log_dir
         with open(os.path.join(directory, filename), 'w') as f:
@@ -242,7 +245,8 @@ def variation_slug(data_id, label: dict) -> str:
     return '-'.join(parts)
 
 
-def run_variation(data: dict, variation: dict, models: dict, schema: dict | None):
+def run_variation(data: dict, variation: dict, models: dict, schema: dict | None,
+                  dry_run: bool = False):
     """Run a single variation for a single dataset record (one LLM call)."""
     data_id = data.get('id')
     label = variation_label(variation)
@@ -300,7 +304,7 @@ def run_variation(data: dict, variation: dict, models: dict, schema: dict | None
     print('LLM Call for id={} doc={}, prompt={}, const_embed={}, model={}, options={}, repeat={}'.format(
         data_id, label['document'], label['prompt'], label['prompt_const_embed'],
         label['model'], json.dumps(label['model_options']), label['repeat']))
-    if args.dry_run:
+    if dry_run:
         return
 
     start_variation = perf_counter()
@@ -334,11 +338,12 @@ def run_variation(data: dict, variation: dict, models: dict, schema: dict | None
     return
 
 
-def run_variations(dataset, variations: list, models: dict, schema: dict | None):
+def run_variations(dataset, variations: list, models: dict, schema: dict | None,
+                   dry_run: bool = False):
     """Run every variation of the matrix for every record of the dataset."""
     for data in dataset:
         for variation in variations:
-            run_variation(data, variation, models, schema)
+            run_variation(data, variation, models, schema, dry_run)
 
     return
 
@@ -364,7 +369,10 @@ def read_dataset(filename: str):
 
 
 # if __name__ == "__main__":
-def cli():
+def cli(argv: list[str] | None = None):
+    parser = build_parser()
+    args = parser.parse_args(argv)
+
     if not args.configfile and not args.prompt and not args.prompt_filename:
         parser.error('a prompt (direct or through prompt-filename) or a --configfile is required')
 
@@ -484,7 +492,8 @@ def cli():
 
     # Iterate over the dataset and run the variations for each item:
     start = perf_counter()
-    run_variations(dataset, variations, models, scenario.get('data_schema'))
+    run_variations(dataset, variations, models, scenario.get('data_schema'),
+                   args.dry_run)
 
     duration_ms = (perf_counter() - start) * 1000
 
