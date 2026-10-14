@@ -391,8 +391,14 @@ def cli(argv: list[str] | None = None):
     config_module.log_dir = os.path.join(logs_dir, run_timestamp)
     config_module.run_dir = os.path.join(runs_dir, run_timestamp)
 
-    os.makedirs(config_module.log_dir, exist_ok=True)
-    os.makedirs(config_module.run_dir, exist_ok=True)
+    try:
+        os.makedirs(config_module.run_dir)
+        os.makedirs(config_module.log_dir)
+    except FileExistsError as e:
+        # folders are named by the second: error exit if existing folders
+        print(f'Run folder already exists: {e.filename} (another run started '
+              f'in the same second?). Please retry.')
+        exit(1)
 
     # Configure logger for all (this package + dependencies).
     logging.basicConfig(filename=os.path.join(config_module.log_dir, 'llmflock.log'), encoding='utf-8',
